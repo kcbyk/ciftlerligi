@@ -9,7 +9,10 @@ const { initializeFirebase } = require('./config/firebase');
 const publicRoutes = require('./routes/publicRoutes');
 const systemRoutes = require('./routes/systemRoutes');
 const { bootstrapData } = require('./services/bootstrapService');
-const { initializeTelegramBot } = require('./services/telegramBotService');
+const {
+  initializeTelegramBot,
+  configureTelegramWebhook,
+} = require('./services/telegramBotService');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 const { logError } = require('./utils/logger');
 
@@ -24,8 +27,10 @@ async function ensureBootstrapped({ startTelegramPolling = false } = {}) {
       initializeFirebase();
       await bootstrapData();
 
-      if (startTelegramPolling) {
-        await initializeTelegramBot({ enablePolling: true });
+      await initializeTelegramBot({ enablePolling: startTelegramPolling });
+
+      if (!startTelegramPolling) {
+        await configureTelegramWebhook();
       }
     })().catch((error) => {
       bootPromise = null;

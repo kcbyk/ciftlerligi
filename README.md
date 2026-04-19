@@ -43,7 +43,9 @@ Vercel projesinde (ciftlerligi) su degerleri gir:
 - `FIREBASE_STORAGE_BUCKET` (opsiyonel)
 - `TELEGRAM_BOT_TOKEN` (opsiyonel)
 - `TELEGRAM_CHAT_ID` (opsiyonel)
-- `TELEGRAM_POLLING_ENABLED=false` (Vercel icin onerilen)
+- `APP_BASE_URL` (`https://ciftlerligi.vercel.app` gibi)
+- `TELEGRAM_WEBHOOK_SECRET` (guclu bir gizli deger)
+- `TELEGRAM_POLLING_ENABLED=false` (Vercel icin zorunluya yakin, webhook kullanilir)
 
 ## Lokal Calistirma
 ```bash

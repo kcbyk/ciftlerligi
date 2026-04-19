@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const env = require('../config/env');
 const {
   getPairSummaries,
   getSubmissionById,
@@ -196,6 +197,32 @@ function createTelegramClient(token, { enablePolling }) {
   });
 }
 
+function normalizeBaseUrl(value) {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) {
+    return '';
+  }
+
+  const withProtocol =
+    rawValue.startsWith('http://') || rawValue.startsWith('https://')
+      ? rawValue
+      : `https://${rawValue}`;
+
+  return withProtocol.replace(/\/+$/, '');
+}
+
+function resolvePublicBaseUrl() {
+  if (env.APP_BASE_URL) {
+    return normalizeBaseUrl(env.APP_BASE_URL);
+  }
+
+  if (process.env.VERCEL_URL) {
+    return normalizeBaseUrl(process.env.VERCEL_URL);
+  }
+
+  return '';
+}
+
 async function initializeTelegramBot({ enablePolling = true } = {}) {
   const config = await getTelegramConfig({ includeSecret: true });
   const botToken = config.botToken;
@@ -218,8 +245,14 @@ async function initializeTelegramBot({ enablePolling = true } = {}) {
   }
 
   const nextBot = createTelegramClient(botToken, { enablePolling });
+  registerBotHandlers(nextBot);
+
   if (enablePolling) {
-    registerBotHandlers(nextBot);
+    try {
+      await nextBot.deleteWebHook();
+    } catch (error) {
+      logWarn('Telegram webhook temizlenemedi.', { message: error.message });
+    }
   }
 
   botInstance = nextBot;
@@ -233,6 +266,49 @@ async function initializeTelegramBot({ enablePolling = true } = {}) {
   }
 
   return botInstance;
+}
+
+async function configureTelegramWebhook() {
+  const config = await getTelegramConfig({ includeSecret: true });
+  if (!config.botToken) {
+    logWarn('Telegram token bulunamadi, webhook ayarlanamadi.');
+    return false;
+  }
+
+  if (!botInstance || pollingMode || activeToken !== config.botToken) {
+    await initializeTelegramBot({ enablePolling: false });
+  }
+
+  if (!botInstance) {
+    return false;
+  }
+
+  const baseUrl = resolvePublicBaseUrl();
+  if (!baseUrl) {
+    logWarn('APP_BASE_URL tanimli degil, Telegram webhook ayarlanamadi.');
+    return false;
+  }
+
+  const webhookUrl = `${baseUrl}/api/telegram/webhook`;
+  const secretToken = String(env.TELEGRAM_WEBHOOK_SECRET || '').trim();
+
+  const currentInfo = await botInstance.getWebHookInfo();
+  const hasExpectedUrl = currentInfo?.url === webhookUrl;
+  if (hasExpectedUrl) {
+    return true;
+  }
+
+  const webhookOptions = {
+    drop_pending_updates: false,
+  };
+
+  if (secretToken) {
+    webhookOptions.secret_token = secretToken;
+  }
+
+  await botInstance.setWebHook(webhookUrl, webhookOptions);
+  logInfo('Telegram webhook ayarlandi.', { webhookUrl });
+  return true;
 }
 
 async function reloadTelegramBot({ enablePolling = true } = {}) {
@@ -249,6 +325,23 @@ async function reloadTelegramBot({ enablePolling = true } = {}) {
   pollingMode = false;
 
   return initializeTelegramBot({ enablePolling });
+}
+
+async function processTelegramWebhookUpdate(update) {
+  if (!update || typeof update !== 'object') {
+    return false;
+  }
+
+  if (!botInstance) {
+    await initializeTelegramBot({ enablePolling: false });
+  }
+
+  if (!botInstance) {
+    return false;
+  }
+
+  botInstance.processUpdate(update);
+  return true;
 }
 
 async function sendSubmissionNotification(submission) {
@@ -307,7 +400,9 @@ function getTelegramStatus() {
 
 module.exports = {
   initializeTelegramBot,
+  configureTelegramWebhook,
   reloadTelegramBot,
+  processTelegramWebhookUpdate,
   sendSubmissionNotification,
   sendTestMessage,
   getTelegramStatus,
