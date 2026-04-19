@@ -10,7 +10,7 @@ const DEFAULT_SETTINGS = {
   instagramUrl:
     'https://www.instagram.com/digi.showofficial?igsh=ZXFnMnduY3lnZ2Mw',
   youtubeUrl: 'https://youtube.com/@digishow_00?si=t9kXqy4HMYgN3-6p',
-  logoUrl: '/assets/logo-placeholder.svg',
+  logoUrl: '/assets/site-logo.jpeg',
   backgroundImageUrl: '/assets/bg-placeholder.svg',
   watermarkEnabled: true,
   logoSize: 116,

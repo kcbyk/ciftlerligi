@@ -1,5 +1,5 @@
 const env = require('./config/env');
-const { createApp, ensureBootstrapped, adminBasePath } = require('./app');
+const { createApp, ensureBootstrapped } = require('./app');
 const { logInfo, logError } = require('./utils/logger');
 
 const app = createApp({
@@ -15,7 +15,6 @@ async function startServer() {
     app.listen(env.PORT, () => {
       logInfo('Sunucu baslatildi', {
         port: env.PORT,
-        adminBasePath,
       });
     });
   } catch (error) {

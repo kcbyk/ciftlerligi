@@ -1,4 +1,5 @@
 (() => {
+  const FORCED_LOGO_URL = '/assets/site-logo.jpeg';
   const state = {
     settings: null,
   };
@@ -13,7 +14,7 @@
     instagramUrl:
       'https://www.instagram.com/digi.showofficial?igsh=ZXFnMnduY3lnZ2Mw',
     youtubeUrl: 'https://youtube.com/@digishow_00?si=t9kXqy4HMYgN3-6p',
-    logoUrl: '/assets/logo-placeholder.svg',
+    logoUrl: FORCED_LOGO_URL,
     backgroundImageUrl: '/assets/bg-placeholder.svg',
     watermarkEnabled: true,
     logoSize: 116,
@@ -100,12 +101,12 @@
     );
 
     document.querySelectorAll('[data-logo]').forEach((node) => {
-      node.src = settings.logoUrl || FALLBACK_SETTINGS.logoUrl;
+      node.src = FORCED_LOGO_URL;
       node.alt = settings.heroTitle || 'Logo';
     });
 
     document.querySelectorAll('[data-watermark-logo]').forEach((node) => {
-      node.src = settings.logoUrl || FALLBACK_SETTINGS.logoUrl;
+      node.src = FORCED_LOGO_URL;
       node.classList.toggle('hidden', !settings.watermarkEnabled);
     });
 
