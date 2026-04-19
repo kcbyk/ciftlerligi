@@ -1,12 +1,12 @@
-(() => {
+﻿(() => {
   const FORCED_LOGO_URL = '/assets/site-logo.jpeg';
   const state = {
     settings: null,
   };
 
   const FALLBACK_SETTINGS = {
-    heroTitle: 'Çiftler Ligi Anketi',
-    heroDescription: 'Çiftler Ligi Anketi',
+    heroTitle: 'Ã‡iftler Ligi Anketi',
+    heroDescription: 'Ã‡iftler Ligi Anketi',
     rules: ['[KURAL_1]', '[KURAL_2]', '[KURAL_3]', '[KURAL_4]', '[KURAL_5]'],
     completionMessage: '[BASARI_MESAJI]',
     primaryButtonText: 'Devam Et',
@@ -149,7 +149,7 @@
       node.textContent = settings.submitButtonText || FALLBACK_SETTINGS.submitButtonText;
     });
 
-    document.title = `${resolvedHeroTitle} | Çiftler Ligi`;
+    document.title = `${resolvedHeroTitle} | Ã‡iftler Ligi`;
   }
 
   function showMessage(target, message, type = 'info') {
@@ -179,3 +179,4 @@
     hideMessage,
   };
 })();
+
