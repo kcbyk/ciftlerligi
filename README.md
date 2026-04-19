@@ -1,12 +1,12 @@
-# Ciftler Ligi (Admin Panelsiz)
+# Ciftler Ligi (Gizli Admin Panelli)
 
-Bu surumde sadece kullanici akis vardir:
+Bu surumde kullanici akisina ek olarak gizli admin panel bulunur:
 - Ana sayfa
 - Cift bilgi formu
 - Cinsiyete gore anket
 - Tamamlandi sayfasi
-
-Admin panel ve `/api/admin/*` endpointleri kaldirildi.
+- Gizli admin giris sayfasi (ozel route)
+- Admin dashboard (soru/kurallar yonetimi)
 
 ## Canli URL
 - https://ciftlerligi.vercel.app
@@ -16,6 +16,7 @@ Admin panel ve `/api/admin/*` endpointleri kaldirildi.
 - Backend: Node.js + Express
 - Veritabani: Firebase Firestore
 - Telegram: Bot API
+- Admin auth: Backend sifre + JWT cookie
 
 ## Logo
 `img/sitelogosu.jpeg` dosyasi site logosu olarak alindi ve
@@ -37,6 +38,9 @@ Asagidaki adimlari bir kez yapman yeterli:
 Vercel projesinde (ciftlerligi) su degerleri gir:
 
 - `SURVEY_JWT_SECRET`
+- `ADMIN_PANEL_ROUTE` (ornek: `/super-admin-paneli-8472`)
+- `ADMIN_PANEL_PASSWORD`
+- `ADMIN_JWT_SECRET`
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`  (satir sonlari `\n` olacak sekilde)
@@ -46,6 +50,18 @@ Vercel projesinde (ciftlerligi) su degerleri gir:
 - `APP_BASE_URL` (`https://ciftlerligi.vercel.app` gibi)
 - `TELEGRAM_WEBHOOK_SECRET` (guclu bir gizli deger)
 - `TELEGRAM_POLLING_ENABLED=false` (Vercel icin zorunluya yakin, webhook kullanilir)
+
+## Gizli Admin Panel
+
+- Admin login sayfasi: `https://alanadiniz.com{ADMIN_PANEL_ROUTE}`
+- Dashboard: `https://alanadiniz.com{ADMIN_PANEL_ROUTE}/dashboard`
+- Tanimli endpointler:
+  - `POST /api/admin/login`
+  - `POST /api/admin/logout`
+  - `GET /api/admin/me`
+  - `GET/PATCH /api/admin/settings`
+  - `GET/POST/PATCH/DELETE /api/admin/questions`
+- Tum admin mutasyonlari `admin_logs` koleksiyonuna kaydedilir.
 
 ## Lokal Calistirma
 ```bash
@@ -61,14 +77,22 @@ public/
   form.html
   quiz.html
   success.html
+  js/
+    admin-login.js
+    admin-dashboard.js
   assets/
     site-logo.jpeg
 src/
   app.js
   server.js
   routes/publicRoutes.js
+  routes/adminRoutes.js
+  controllers/adminController.js
   controllers/publicController.js
   services/
+views/
+  admin-login.html
+  admin-dashboard.html
 api/
   index.js
 vercel.json

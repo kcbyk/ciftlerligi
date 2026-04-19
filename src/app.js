@@ -7,7 +7,9 @@ const compression = require('compression');
 const env = require('./config/env');
 const { initializeFirebase } = require('./config/firebase');
 const publicRoutes = require('./routes/publicRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const systemRoutes = require('./routes/systemRoutes');
+const { requireAdminPageAuth } = require('./middlewares/adminAuth');
 const { bootstrapData } = require('./services/bootstrapService');
 const {
   initializeTelegramBot,
@@ -18,6 +20,19 @@ const { logError } = require('./utils/logger');
 
 const rootDir = process.cwd();
 const publicDir = path.resolve(rootDir, 'public');
+const viewsDir = path.resolve(rootDir, 'views');
+
+function normalizeAdminRoute(routeValue) {
+  const raw = String(routeValue || '').trim();
+  const fallback = '/super-admin-paneli-8472';
+  if (!raw) {
+    return fallback;
+  }
+
+  const withLeadingSlash = raw.startsWith('/') ? raw : `/${raw}`;
+  const cleaned = withLeadingSlash.replace(/\/+$/, '');
+  return cleaned || fallback;
+}
 
 let bootPromise = null;
 
@@ -43,6 +58,7 @@ async function ensureBootstrapped({ startTelegramPolling = false } = {}) {
 
 function createApp({ startTelegramPolling = false } = {}) {
   const app = express();
+  const adminRoute = normalizeAdminRoute(env.ADMIN_PANEL_ROUTE);
 
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -94,7 +110,20 @@ function createApp({ startTelegramPolling = false } = {}) {
     res.sendFile(path.resolve(publicDir, 'success.html'));
   });
 
+  app.get(adminRoute, (_req, res) => {
+    res.sendFile(path.resolve(viewsDir, 'admin-login.html'));
+  });
+
+  app.get(
+    `${adminRoute}/dashboard`,
+    requireAdminPageAuth({ loginPath: adminRoute }),
+    (_req, res) => {
+      res.sendFile(path.resolve(viewsDir, 'admin-dashboard.html'));
+    }
+  );
+
   app.use('/api/public', publicRoutes);
+  app.use('/api/admin', adminRoutes);
   app.use('/api', systemRoutes);
 
   app.use(notFoundHandler);

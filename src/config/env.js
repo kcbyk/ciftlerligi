@@ -33,6 +33,13 @@ const env = {
   FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
   FIREBASE_SERVICE_ACCOUNT_PATH: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
   FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
+  ADMIN_PANEL_ROUTE: process.env.ADMIN_PANEL_ROUTE || '/super-admin-paneli-8472',
+  ADMIN_PANEL_PASSWORD: process.env.ADMIN_PANEL_PASSWORD || 'change-this-admin-password',
+  ADMIN_JWT_SECRET:
+    process.env.ADMIN_JWT_SECRET ||
+    process.env.SURVEY_JWT_SECRET ||
+    process.env.PUBLIC_FLOW_JWT_SECRET ||
+    'change-me-admin-secret',
   APP_BASE_URL: process.env.APP_BASE_URL || '',
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || '',
