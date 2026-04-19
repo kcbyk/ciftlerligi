@@ -17,11 +17,11 @@ function sanitizeSettingsPatch(payload = {}) {
   const patch = {};
 
   if (typeof payload.heroTitle === 'string') {
-    patch.heroTitle = normalizeText(payload.heroTitle) || 'Ã‡iftler Ligi Anketi';
+    patch.heroTitle = normalizeText(payload.heroTitle) || 'Çiftler Ligi Anketi';
   }
 
   if (typeof payload.heroDescription === 'string') {
-    patch.heroDescription = normalizeText(payload.heroDescription) || 'Ã‡iftler Ligi Anketi';
+    patch.heroDescription = normalizeText(payload.heroDescription) || '';
   }
 
   if (typeof payload.completionMessage === 'string') {
@@ -133,4 +133,3 @@ module.exports = {
   ensureSettings,
   updateSettings,
 };
-

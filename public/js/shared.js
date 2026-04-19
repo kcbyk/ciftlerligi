@@ -1,12 +1,13 @@
 ﻿(() => {
   const FORCED_LOGO_URL = '/assets/site-logo.jpeg';
+  const FORCED_HERO_TITLE = 'Çiftler Ligi Anketi';
   const state = {
     settings: null,
   };
 
   const FALLBACK_SETTINGS = {
-    heroTitle: 'Ã‡iftler Ligi Anketi',
-    heroDescription: 'Ã‡iftler Ligi Anketi',
+    heroTitle: FORCED_HERO_TITLE,
+    heroDescription: '',
     rules: ['[KURAL_1]', '[KURAL_2]', '[KURAL_3]', '[KURAL_4]', '[KURAL_5]'],
     completionMessage: '[BASARI_MESAJI]',
     primaryButtonText: 'Devam Et',
@@ -21,6 +22,10 @@
     infoText: '[BILGILENDIRME_METNI]',
   };
 
+  function isMojibake(value) {
+    return /Ã|Ä|Å|�/.test(String(value || ''));
+  }
+
   function resolvePlaceholderText(value, fallbackValue) {
     const normalized = String(value || '').trim();
     if (!normalized) {
@@ -28,7 +33,7 @@
     }
 
     const looksLikePlaceholder = /^\[[A-Z0-9_]+\]$/.test(normalized);
-    if (looksLikePlaceholder) {
+    if (looksLikePlaceholder || isMojibake(normalized)) {
       return fallbackValue;
     }
 
@@ -101,19 +106,17 @@
       return;
     }
 
-    const resolvedHeroTitle = resolvePlaceholderText(
-      settings.heroTitle,
-      FALLBACK_SETTINGS.heroTitle
-    );
-    const resolvedHeroDescription = resolvePlaceholderText(
-      settings.heroDescription,
-      FALLBACK_SETTINGS.heroDescription
-    );
+    const resolvedHeroTitle = FORCED_HERO_TITLE;
+    const resolvedHeroDescription = '';
 
     setText('[data-site-title]', resolvedHeroTitle);
     setText('[data-site-description]', resolvedHeroDescription);
     setText('[data-info-text]', settings.infoText || FALLBACK_SETTINGS.infoText);
     setText('[data-completion-message]', settings.completionMessage || FALLBACK_SETTINGS.completionMessage);
+
+    document.querySelectorAll('[data-site-description]').forEach((node) => {
+      node.style.display = 'none';
+    });
 
     renderRules(settings.rules || FALLBACK_SETTINGS.rules);
 
@@ -149,7 +152,7 @@
       node.textContent = settings.submitButtonText || FALLBACK_SETTINGS.submitButtonText;
     });
 
-    document.title = `${resolvedHeroTitle} | Ã‡iftler Ligi`;
+    document.title = `${resolvedHeroTitle} | Çiftler Ligi`;
   }
 
   function showMessage(target, message, type = 'info') {
@@ -179,4 +182,3 @@
     hideMessage,
   };
 })();
-
