@@ -36,7 +36,7 @@ Asagidaki adimlari bir kez yapman yeterli:
 ## Vercel Env Degerleri
 Vercel projesinde (ciftlerligi) su degerleri gir:
 
-- `PUBLIC_FLOW_JWT_SECRET`
+- `SURVEY_JWT_SECRET`
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`  (satir sonlari `\n` olacak sekilde)
