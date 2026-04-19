@@ -292,12 +292,6 @@ async function configureTelegramWebhook() {
   const webhookUrl = `${baseUrl}/api/telegram/webhook`;
   const secretToken = String(env.TELEGRAM_WEBHOOK_SECRET || '').trim();
 
-  const currentInfo = await botInstance.getWebHookInfo();
-  const hasExpectedUrl = currentInfo?.url === webhookUrl;
-  if (hasExpectedUrl) {
-    return true;
-  }
-
   const webhookOptions = {
     drop_pending_updates: false,
   };
