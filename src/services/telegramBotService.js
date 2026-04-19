@@ -11,6 +11,33 @@ const { logInfo, logError, logWarn } = require('../utils/logger');
 let botInstance = null;
 let activeToken = '';
 let pollingMode = false;
+const PAIR_LIST_CACHE_TTL_MS = 15000;
+let pairListCache = {
+  expiresAt: 0,
+  value: null,
+};
+
+function invalidatePairListCache() {
+  pairListCache = {
+    expiresAt: 0,
+    value: null,
+  };
+}
+
+async function getPairSummariesCached() {
+  const now = Date.now();
+  if (pairListCache.value && pairListCache.expiresAt > now) {
+    return pairListCache.value;
+  }
+
+  const pairs = await getPairSummaries();
+  pairListCache = {
+    expiresAt: now + PAIR_LIST_CACHE_TTL_MS,
+    value: pairs,
+  };
+
+  return pairs;
+}
 
 async function isAuthorizedChat(chatId) {
   const config = await getTelegramConfig({ includeSecret: true });
@@ -60,7 +87,7 @@ async function sendMessage(chatId, text, options = {}) {
 }
 
 async function sendPairList(chatId, greetingText = 'Cift listesi:') {
-  const pairs = await getPairSummaries();
+  const pairs = await getPairSummariesCached();
 
   if (!pairs.length) {
     await sendMessage(chatId, 'Henuz kayitli bir cift bulunmuyor.');
@@ -138,56 +165,85 @@ async function handlePersonSelection(query, submissionId, pairSampleId) {
   });
 }
 
+async function handleStartCommand(chatId) {
+  if (!chatId) {
+    return;
+  }
+
+  try {
+    const allowed = await isAuthorizedChat(chatId);
+    if (!allowed) {
+      await sendMessage(chatId, 'Bu bota erisiminiz bulunmuyor.');
+      return;
+    }
+
+    await sendPairList(chatId, 'Hos geldiniz. Kayitli ciftler:');
+  } catch (error) {
+    logError('Telegram /start komutu islenemedi', error);
+    await sendMessage(chatId, 'Liste getirilirken hata olustu.');
+  }
+}
+
+async function handleCallbackQuery(query, bot = botInstance) {
+  const data = query.data || '';
+
+  try {
+    const chatId = query.message?.chat?.id;
+    const allowed = await isAuthorizedChat(chatId);
+    if (!allowed) {
+      await sendMessage(chatId, 'Bu bota erisiminiz bulunmuyor.');
+      await bot.answerCallbackQuery(query.id);
+      return;
+    }
+
+    if (data === 'pairs') {
+      await sendPairList(chatId, 'Cift listesi:');
+    } else if (data.startsWith('pair:')) {
+      const [, sampleSubmissionId] = data.split(':');
+      await handlePairSelection(query, sampleSubmissionId);
+    } else if (data.startsWith('person:')) {
+      const [, submissionId, pairSampleId] = data.split(':');
+      await handlePersonSelection(query, submissionId, pairSampleId);
+    }
+
+    await bot.answerCallbackQuery(query.id);
+  } catch (error) {
+    logError('Telegram callback query islenemedi', error);
+    try {
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Islem sirasinda hata olustu.',
+        show_alert: true,
+      });
+    } catch (answerError) {
+      logError('Telegram callback query response gonderilemedi', answerError);
+    }
+  }
+}
+
+async function handleMessageUpdate(message) {
+  const chatId = message?.chat?.id;
+  const text = String(message?.text || '').trim();
+
+  if (!chatId || !text) {
+    return false;
+  }
+
+  const isStartCommand = /^\/(start|couples)(@\w+)?(\s|$)/i.test(text);
+  if (!isStartCommand) {
+    return false;
+  }
+
+  await handleStartCommand(chatId);
+  return true;
+}
+
 function registerBotHandlers(bot) {
   bot.onText(/\/start|\/couples/i, async (msg) => {
-    try {
-      const allowed = await isAuthorizedChat(msg.chat.id);
-      if (!allowed) {
-        await sendMessage(msg.chat.id, 'Bu bota erisiminiz bulunmuyor.');
-        return;
-      }
-
-      await sendPairList(msg.chat.id, 'Hos geldiniz. Kayitli ciftler:');
-    } catch (error) {
-      logError('Telegram /start komutu islenemedi', error);
-      await sendMessage(msg.chat.id, 'Liste getirilirken hata olustu.');
-    }
+    await handleStartCommand(msg.chat?.id);
   });
 
   bot.on('callback_query', async (query) => {
-    const data = query.data || '';
-
-    try {
-      const chatId = query.message?.chat?.id;
-      const allowed = await isAuthorizedChat(chatId);
-      if (!allowed) {
-        await sendMessage(chatId, 'Bu bota erisiminiz bulunmuyor.');
-        await bot.answerCallbackQuery(query.id);
-        return;
-      }
-
-      if (data === 'pairs') {
-        await sendPairList(chatId, 'Cift listesi:');
-      } else if (data.startsWith('pair:')) {
-        const [, sampleSubmissionId] = data.split(':');
-        await handlePairSelection(query, sampleSubmissionId);
-      } else if (data.startsWith('person:')) {
-        const [, submissionId, pairSampleId] = data.split(':');
-        await handlePersonSelection(query, submissionId, pairSampleId);
-      }
-
-      await bot.answerCallbackQuery(query.id);
-    } catch (error) {
-      logError('Telegram callback query islenemedi', error);
-      try {
-        await bot.answerCallbackQuery(query.id, {
-          text: 'Islem sirasinda hata olustu.',
-          show_alert: true,
-        });
-      } catch (answerError) {
-        logError('Telegram callback query response gonderilemedi', answerError);
-      }
-    }
+    await handleCallbackQuery(query, bot);
   });
 }
 
@@ -334,11 +390,22 @@ async function processTelegramWebhookUpdate(update) {
     return false;
   }
 
-  botInstance.processUpdate(update);
+  if (update.message) {
+    await handleMessageUpdate(update.message);
+    return true;
+  }
+
+  if (update.callback_query) {
+    await handleCallbackQuery(update.callback_query, botInstance);
+    return true;
+  }
+
   return true;
 }
 
 async function sendSubmissionNotification(submission) {
+  invalidatePairListCache();
+
   const config = await getTelegramConfig({ includeSecret: true });
   if (!config.chatId) {
     logWarn('Telegram chat id eksik, bildirim gonderilemedi.');
