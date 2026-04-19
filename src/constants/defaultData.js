@@ -1,7 +1,7 @@
 const DEFAULT_SETTINGS = {
   id: 'main',
-  heroTitle: '[SITE_BASLIGI]',
-  heroDescription: '[ALT_BASLIK]',
+  heroTitle: 'Çiftler Ligi Anketi',
+  heroDescription: 'Çiftler Ligi Anketi',
   rules: ['[KURAL_1]', '[KURAL_2]', '[KURAL_3]', '[KURAL_4]', '[KURAL_5]'],
   completionMessage: '[BASARI_MESAJI]',
   infoText: '[BILGILENDIRME_METNI]',

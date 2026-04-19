@@ -17,11 +17,11 @@ function sanitizeSettingsPatch(payload = {}) {
   const patch = {};
 
   if (typeof payload.heroTitle === 'string') {
-    patch.heroTitle = normalizeText(payload.heroTitle) || '[SITE_BASLIGI]';
+    patch.heroTitle = normalizeText(payload.heroTitle) || 'Çiftler Ligi Anketi';
   }
 
   if (typeof payload.heroDescription === 'string') {
-    patch.heroDescription = normalizeText(payload.heroDescription) || '[ALT_BASLIK]';
+    patch.heroDescription = normalizeText(payload.heroDescription) || 'Çiftler Ligi Anketi';
   }
 
   if (typeof payload.completionMessage === 'string') {
