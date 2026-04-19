@@ -320,6 +320,9 @@ async function sendTelegramTest(req, res) {
 }
 
 function buildPublicAssetPath(file) {
+  if (!file?.path) {
+    return '';
+  }
   return `/uploads/${path.basename(file.path).replace(/\\/g, '/')}`;
 }
 
@@ -332,6 +335,13 @@ async function uploadLogo(req, res) {
   }
 
   const logoUrl = buildPublicAssetPath(req.file);
+  if (!logoUrl) {
+    return res.status(400).json({
+      success: false,
+      message:
+        'Sunucu ortami dosya yazma desteklemiyor. Logo icin dogrudan logoUrl alanini guncelleyin veya storage baglayin.',
+    });
+  }
   const settings = await updateSettings({ logoUrl });
 
   await logAdminAction({
@@ -355,6 +365,13 @@ async function uploadBackground(req, res) {
   }
 
   const backgroundImageUrl = buildPublicAssetPath(req.file);
+  if (!backgroundImageUrl) {
+    return res.status(400).json({
+      success: false,
+      message:
+        'Sunucu ortami dosya yazma desteklemiyor. Arka plan icin dogrudan backgroundImageUrl alanini guncelleyin veya storage baglayin.',
+    });
+  }
   const settings = await updateSettings({ backgroundImageUrl });
 
   await logAdminAction({

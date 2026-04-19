@@ -27,6 +27,7 @@ const {
 } = require('../controllers/adminController');
 
 const router = express.Router();
+const isVercelRuntime = process.env.VERCEL === '1';
 
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -39,19 +40,26 @@ const loginLimiter = rateLimit({
   },
 });
 
-const uploadDir = path.resolve(process.cwd(), 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+let storage;
+if (isVercelRuntime) {
+  storage = multer.memoryStorage();
+} else {
+  const uploadDir = path.resolve(process.cwd(), 'public', 'uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
-    const basename = path.basename(file.originalname || 'asset', ext).replace(/[^a-zA-Z0-9-_]/g, '_');
-    cb(null, `${Date.now()}-${basename}${ext}`);
-  },
-});
+  storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+      const basename = path
+        .basename(file.originalname || 'asset', ext)
+        .replace(/[^a-zA-Z0-9-_]/g, '_');
+      cb(null, `${Date.now()}-${basename}${ext}`);
+    },
+  });
+}
 
 const imageUpload = multer({
   storage,
