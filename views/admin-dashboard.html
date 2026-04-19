@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-top">
+        <div>
+          <h1>Gizli Admin Dashboard</h1>
+          <p class="info">Kurallar, sorular, metinler, medya ve Telegram ayarlari burada yonetilir.</p>
+        </div>
+        <div class="inline-actions">
+          <button id="refresh-dashboard-btn" class="secondary">Yenile</button>
+          <button id="admin-logout-btn" class="danger">Cikis Yap</button>
+        </div>
+      </header>
+
+      <div id="admin-message" class="hidden"></div>
+
+      <section class="admin-grid">
+        <article class="admin-panel full">
+          <div class="section-head">
+            <h2>A) Kurallar ve Genel Metinler</h2>
+          </div>
+          <form id="settings-form" class="row">
+            <div class="split">
+              <label>
+                Acilis basligi
+                <input type="text" name="heroTitle" placeholder="[SITE_BASLIGI]" />
+              </label>
+              <label>
+                Aciklama
+                <input type="text" name="heroDescription" placeholder="[ALT_BASLIK]" />
+              </label>
+            </div>
+
+            <label>
+              Kurallar (her satir bir kural)
+              <textarea name="rulesText" placeholder="[KURAL_1]\n[KURAL_2]\n[KURAL_3]"></textarea>
+            </label>
+
+            <div class="split">
+              <label>
+                Bilgilendirme metni
+                <input type="text" name="infoText" placeholder="[BILGILENDIRME_METNI]" />
+              </label>
+              <label>
+                Tamamlandi mesaji
+                <input type="text" name="completionMessage" placeholder="[BASARI_MESAJI]" />
+              </label>
+            </div>
+
+            <div class="split">
+              <label>
+                Ilk buton yazisi
+                <input type="text" name="primaryButtonText" placeholder="Devam Et" />
+              </label>
+              <label>
+                Gonderim buton yazisi
+                <input type="text" name="submitButtonText" placeholder="Anketi Tamamla" />
+              </label>
+            </div>
+
+            <div class="split">
+              <label>
+                Instagram URL
+                <input type="url" name="instagramUrl" />
+              </label>
+              <label>
+                YouTube URL
+                <input type="url" name="youtubeUrl" />
+              </label>
+            </div>
+
+            <div class="split">
+              <label>
+                Logo boyutu (48-220)
+                <input type="number" min="48" max="220" name="logoSize" />
+              </label>
+              <label>
+                <input type="checkbox" name="watermarkEnabled" />
+                Watermark logo aktif
+              </label>
+            </div>
+
+            <div class="inline-actions">
+              <button type="submit">Ayarlari Kaydet</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="admin-panel full">
+          <div class="section-head">
+            <h2>B) Soru Yonetimi</h2>
+            <span class="info">Admin onayi olmayan soru kullaniciya gozukmez.</span>
+          </div>
+
+          <form id="question-form" class="row">
+            <input type="hidden" id="question-id" />
+            <div class="info">Form modu: <strong id="question-form-mode">Yeni</strong></div>
+
+            <div class="split">
+              <label>
+                Cinsiyet tipi
+                <select name="genderType" required>
+                  <option value="male">Erkek</option>
+                  <option value="female">Kadin</option>
+                </select>
+              </label>
+
+              <label>
+                Soru tipi
+                <select name="questionType" required>
+                  <option value="single_choice">Tek secim</option>
+                  <option value="multi_choice">Coktan secmeli</option>
+                  <option value="open_text">Acik uclu</option>
+                  <option value="rating">Puanlama</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Soru metni
+              <textarea name="questionText" required></textarea>
+            </label>
+
+            <label>
+              Secenekler (secmeli sorularda her satir bir secenek)
+              <textarea name="optionsText"></textarea>
+            </label>
+
+            <div class="split">
+              <label>
+                <input type="checkbox" name="isActive" checked />
+                Soru aktif
+              </label>
+              <label>
+                <input type="checkbox" name="approved" />
+                Onayli / yayinla
+              </label>
+            </div>
+
+            <div class="inline-actions">
+              <button type="submit">Soru Kaydet</button>
+              <button id="question-form-cancel" type="button" class="secondary">Formu Sifirla</button>
+            </div>
+          </form>
+
+          <div class="split">
+            <div>
+              <h3>Erkek Sorulari</h3>
+              <div id="male-questions-list" class="list"></div>
+            </div>
+            <div>
+              <h3>Kadin Sorulari</h3>
+              <div id="female-questions-list" class="list"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="section-head">
+            <h2>C) Logo ve Arka Plan Yonetimi</h2>
+          </div>
+          <form id="logo-upload-form" class="row">
+            <label>
+              Logo yukle
+              <input type="file" name="logo" accept="image/*" />
+            </label>
+            <button type="submit">Logo Guncelle</button>
+          </form>
+
+          <form id="background-upload-form" class="row">
+            <label>
+              Arka plan yukle
+              <input type="file" name="background" accept="image/*" />
+            </label>
+            <button type="submit">Arka Plani Guncelle</button>
+          </form>
+        </article>
+
+        <article class="admin-panel">
+          <div class="section-head">
+            <h2>D) Telegram Ayarlari</h2>
+            <span id="telegram-status" class="badge">Bot pasif</span>
+          </div>
+
+          <form id="telegram-form" class="row">
+            <label>
+              Bot token
+              <input type="text" name="botToken" placeholder="[TELEGRAM_BOT_TOKEN]" />
+            </label>
+            <label>
+              Chat ID
+              <input type="text" name="chatId" placeholder="[TELEGRAM_CHAT_ID]" />
+            </label>
+
+            <div class="inline-actions">
+              <button type="submit">Telegram Ayarlarini Kaydet</button>
+              <button id="telegram-test-btn" type="button" class="secondary">Test Mesaji Gonder</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="admin-panel full">
+          <div class="section-head">
+            <h2>E) Basvuru / Katilimci Listesi</h2>
+          </div>
+
+          <div class="split">
+            <div>
+              <h3>Kayitlar</h3>
+              <div id="submission-list" class="list"></div>
+            </div>
+            <div>
+              <h3>Detay</h3>
+              <div id="submission-detail" class="list"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="admin-panel full">
+          <div class="section-head">
+            <h2>F) Admin Islem Loglari</h2>
+          </div>
+          <div id="log-list" class="list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/js/admin-dashboard.js"></script>
+  </body>
+</html>

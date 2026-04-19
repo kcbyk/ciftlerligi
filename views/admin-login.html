@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gizli Admin Girisi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <section class="admin-login-card">
+        <h1>Gizli Admin Paneli</h1>
+        <p class="info">Bu alana sadece yetkili sifre ile erisilebilir.</p>
+
+        <form id="admin-login-form">
+          <label>
+            Admin sifresi
+            <input type="password" name="password" autocomplete="current-password" required />
+          </label>
+
+          <button type="submit">Panele Gir</button>
+        </form>
+
+        <div id="admin-login-feedback" class="hidden"></div>
+      </section>
+    </main>
+
+    <script src="/js/admin-login.js"></script>
+  </body>
+</html>
