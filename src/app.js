@@ -83,11 +83,12 @@ function createApp({ startTelegramPolling = false } = {}) {
   app.use(async (_req, _res, next) => {
     try {
       await ensureBootstrapped({ startTelegramPolling });
-      next();
     } catch (error) {
       logError('Uygulama bootstrap asamasinda hata', error);
-      next(error);
+      app.locals.bootstrapError = error.message;
     }
+
+    next();
   });
 
   app.use(express.static(publicDir, { extensions: ['html'] }));
