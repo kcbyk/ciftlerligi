@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Ciftler Ligi anket sorulari" />
+    <title>Anket | Ciftler Ligi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <img class="watermark-logo" data-watermark-logo src="/assets/site-logo.jpeg" alt="Watermark" />
+
+    <main class="page-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" data-logo src="/assets/site-logo.jpeg" alt="Logo" />
+          <div class="brand-text">
+            <h1 data-site-title>Ciftler Ligi</h1>
+            <p id="quiz-person-title">Anket</p>
+          </div>
+        </div>
+        <a class="secondary-btn" href="/">Bilgileri Duzenle</a>
+      </header>
+
+      <section class="glass-card quiz-card">
+        <div class="quiz-progress">
+          <strong>Anket ilerlemesi: <span id="quiz-progress-text">0/0</span></strong>
+          <div class="progress-track">
+            <div id="quiz-progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="info-box quiz-note">
+          Yalnizca sectigin tarafin sorularini goruyorsun. Tum sorular zorunludur.
+        </div>
+
+        <div id="quiz-step" class="quiz-step"></div>
+
+        <div id="quiz-feedback" class="hidden"></div>
+
+        <div class="quiz-actions">
+          <button id="quiz-back-btn" type="button" class="secondary-btn">Geri</button>
+          <button id="quiz-next-btn" type="button" class="primary-btn" data-submit-button-text>
+            Anketi Bitir
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/js/firebase-init.js"></script>
+    <script src="/js/shared.js"></script>
+    <script src="/js/quiz.js"></script>
+  </body>
+</html>

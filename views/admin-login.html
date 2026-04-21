@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Admin Giris | Ciftler Ligi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <img class="watermark-logo" data-watermark-logo src="/assets/site-logo.jpeg" alt="Watermark" />
+
+    <main class="page-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" data-logo src="/assets/site-logo.jpeg" alt="Logo" />
+          <div class="brand-text">
+            <h1>Gizli Admin Paneli</h1>
+            <p>Sadece yetkili kullanicilar icindir.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="glass-card form-card admin-login-card">
+        <h2>Sifre ile giris</h2>
+        <p class="info-box">
+          Bu ekran backend dogrulamasi ile korunur. Dogru sifre olmadan panel acilmaz.
+        </p>
+
+        <form id="admin-login-form" class="input-grid" autocomplete="off">
+          <label for="admin-password">
+            Admin sifresi
+            <input
+              id="admin-password"
+              name="password"
+              type="password"
+              minlength="6"
+              required
+              placeholder="Sifreyi gir"
+            />
+          </label>
+
+          <button class="primary-btn" type="submit">Panele Gir</button>
+          <div id="admin-login-feedback" class="hidden"></div>
+        </form>
+      </section>
+    </main>
+
+    <script src="/js/shared.js"></script>
+    <script src="/js/admin-login.js"></script>
+  </body>
+</html>
