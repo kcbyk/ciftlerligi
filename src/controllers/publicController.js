@@ -3,15 +3,14 @@ const { listQuestions } = require('../services/questionService');
 const { createSubmission } = require('../services/submissionService');
 const { sendSubmissionNotification } = require('../services/telegramBotService');
 const { signSurveyToken } = require('../utils/surveyToken');
-const { ensureGenderType, normalizeText } = require('../utils/sanitize');
+const { normalizeText } = require('../utils/sanitize');
 
 function validateBasicFormFields(payload = {}) {
   const pairName = normalizeText(payload.teamName || payload.pairName);
   const respondentName = normalizeText(payload.participantName || payload.respondentName);
-  const genderType = ensureGenderType(payload.genderType);
 
-  if (!pairName || !respondentName || !genderType) {
-    const error = new Error('Isim, takim ismi ve rol secimi zorunludur.');
+  if (!pairName || !respondentName) {
+    const error = new Error('Isim ve takim ismi zorunludur.');
     error.statusCode = 400;
     throw error;
   }
@@ -23,7 +22,7 @@ function validateBasicFormFields(payload = {}) {
     personTwoName: respondentName,
     respondentName,
     participantName: respondentName,
-    genderType,
+    genderType: '',
   };
 }
 
@@ -74,22 +73,57 @@ async function createSurveySession(req, res) {
         teamName: formData.pairName,
         respondentName: formData.respondentName,
         participantName: formData.respondentName,
-        genderType: formData.genderType,
       },
     },
   });
 }
 
-async function getSurveyQuestions(req, res) {
-  const { genderType } = req.surveySession;
+function getQuestionKey(question = {}) {
+  const questionText = normalizeText(question.questionText).toLocaleLowerCase('tr-TR');
+  const questionType = normalizeText(question.questionType).toLowerCase();
+  return `${questionType}::${questionText}`;
+}
 
+function getUniqueQuestions(questionList = []) {
+  const deduped = new Map();
+
+  questionList.forEach((question) => {
+    const key = getQuestionKey(question);
+    const current = deduped.get(key);
+
+    if (!current) {
+      deduped.set(key, question);
+      return;
+    }
+
+    const currentOrder = Number(current.orderIndex || Number.MAX_SAFE_INTEGER);
+    const nextOrder = Number(question.orderIndex || Number.MAX_SAFE_INTEGER);
+
+    if (nextOrder < currentOrder) {
+      deduped.set(key, question);
+    }
+  });
+
+  return Array.from(deduped.values()).sort((left, right) => {
+    const leftOrder = Number(left.orderIndex || Number.MAX_SAFE_INTEGER);
+    const rightOrder = Number(right.orderIndex || Number.MAX_SAFE_INTEGER);
+
+    if (leftOrder === rightOrder) {
+      return String(left.questionText || '').localeCompare(String(right.questionText || ''), 'tr-TR');
+    }
+
+    return leftOrder - rightOrder;
+  }).slice(0, 30);
+}
+
+async function getSurveyQuestions(req, res) {
   const questions = await listQuestions({
-    genderType,
     includeInactive: false,
     includeUnapproved: false,
   });
+  const uniqueQuestions = getUniqueQuestions(questions);
 
-  const safeQuestions = questions.map((question) => ({
+  const safeQuestions = uniqueQuestions.map((question) => ({
     id: question.id,
     questionText: question.questionText,
     questionType: question.questionType,
@@ -100,7 +134,6 @@ async function getSurveyQuestions(req, res) {
   res.json({
     success: true,
     data: {
-      genderType,
       questions: safeQuestions,
     },
   });
@@ -115,7 +148,7 @@ async function submitSurvey(req, res) {
     personOneName: surveySession.personOneName,
     personTwoName: surveySession.personTwoName,
     respondentName: surveySession.respondentName,
-    genderType: surveySession.genderType,
+    genderType: surveySession.genderType || '',
     answers,
     ipAddress: req.headers['x-forwarded-for'] || req.ip,
     deviceInfo: req.headers['user-agent'] || '',

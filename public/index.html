@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Ciftler Ligi icin isim, takim ismi ve rol secip ankete basla."
+      content="Ciftler Ligi icin ismini ve takim ismini yazip ankete basla."
     />
     <meta name="theme-color" content="#B4144A" />
     <title>Ciftler Ligi</title>
@@ -66,12 +66,12 @@
           <span class="step-badge">1. Adim</span>
           <h2 data-landing-headline>Ismini yaz, takimina katil, ankete gec</h2>
           <p data-info-text>
-            Ankete baslamak icin kendi adini, takim adini ve hangi taraf icin giris yaptigini sec.
+            Ankete baslamak icin kendi adini ve takim adini yaz. Sonra tek ekranda 30 soruya gec.
           </p>
 
           <div class="rules-grid" data-rules-list>
             <div class="rule-chip">Ismini ve takim adini dogru yaz.</div>
-            <div class="rule-chip">Kiz ve erkek sorulari birbirinden ayridir.</div>
+            <div class="rule-chip">Tek bir anket acilir ve 30 soru gelir.</div>
             <div class="rule-chip">Tum sorulari eksiksiz cevapla.</div>
             <div class="rule-chip">Admin panelinden cevaplar gorulur.</div>
             <div class="rule-chip">Ayni kisi ayni takimda tekrar acilamaz.</div>
@@ -107,24 +107,6 @@
             />
           </label>
 
-          <div class="role-picker">
-            <span class="field-label" data-role-prompt>Hangi tarafin anketini dolduruyorsun?</span>
-
-            <div class="role-grid">
-              <button type="button" class="role-card" data-gender-option="female">
-                <strong data-female-card-title>Kiz Tarafi</strong>
-                <span data-female-card-description>Sadece kiz sorulari acilir.</span>
-              </button>
-
-              <button type="button" class="role-card" data-gender-option="male">
-                <strong data-male-card-title>Erkek Tarafi</strong>
-                <span data-male-card-description>Sadece erkek sorulari acilir.</span>
-              </button>
-            </div>
-          </div>
-
-          <input type="hidden" name="genderType" value="" />
-
           <button type="submit" class="primary-btn" data-primary-button-text>Ankete Basla</button>
           <div id="form-feedback" class="hidden"></div>
         </form>
@@ -133,8 +115,8 @@
       <section class="glass-card form-card">
         <h2 data-flow-title>Nasil Calisiyor?</h2>
         <div class="utility-stack">
-          <div class="info-box" data-flow-step-one>1. Ana sayfada iki kutuyu doldur ve tarafini sec.</div>
-          <div class="info-box" data-flow-step-two>2. Sistemde senin tarafina ait 30 soru acilir.</div>
+          <div class="info-box" data-flow-step-one>1. Ana sayfada ismini ve takim ismini yaz.</div>
+          <div class="info-box" data-flow-step-two>2. Sistemde tek bir 30 soruluk anket acilir.</div>
           <div class="info-box" data-flow-step-three>3. Admin panelde takimlar, kisiler ve cevaplar tek tek izlenir.</div>
         </div>
       </section>

@@ -512,6 +512,11 @@ textarea:focus {
   gap: 14px;
 }
 
+.admin-simple-section {
+  display: grid;
+  gap: 14px;
+}
+
 .admin-login-card {
   max-width: 620px;
   margin: 0 auto;
@@ -599,10 +604,12 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  width: 100%;
   border-radius: 18px;
   padding: 12px;
   border: 1px solid rgba(255, 221, 235, 0.28);
   background: rgba(255, 255, 255, 0.08);
+  text-align: left;
 }
 
 .admin-browser-item.is-active {
@@ -694,6 +701,15 @@ textarea:focus {
 
 .admin-settings-form {
   margin-bottom: 0;
+}
+
+.admin-settings-block {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 221, 235, 0.28);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .admin-settings-grid {

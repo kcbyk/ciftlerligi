@@ -49,12 +49,13 @@ async function isAuthorizedChat(chatId) {
 }
 
 function formatSubmissionForMessage(submission, { compact = false } = {}) {
+  const genderText = submission.genderType ? ` (${submission.genderType})` : '';
   const lines = [
     compact ? 'Yeni anket gonderimi alindi.' : 'Yeni basvuru kaydedildi.',
     `Cift: ${submission.pairName}`,
     `1. Kisi: ${submission.personOneName}`,
     `2. Kisi: ${submission.personTwoName}`,
-    `Cevaplayan: ${submission.respondentName} (${submission.genderType})`,
+    `Cevaplayan: ${submission.respondentName}${genderText}`,
     `Kayit ID: ${submission.id}`,
     `Tarih: ${submission.createdAt}`,
     '',
@@ -128,7 +129,7 @@ async function handlePairSelection(query, sampleSubmissionId) {
 
   const keyboard = pairSubmissions.map((row) => [
     {
-      text: `${row.respondentName} (${row.genderType})`,
+      text: row.genderType ? `${row.respondentName} (${row.genderType})` : row.respondentName,
       callback_data: `person:${row.id}:${sampleSubmissionId}`,
     },
   ]);

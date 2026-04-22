@@ -244,13 +244,10 @@ async function getAdminTeamParticipants(req, res) {
           id: submission.id,
           participantName: submission.respondentName,
           respondentName: submission.respondentName,
-          genderType: submission.genderType,
           answerCount: Array.isArray(submission.answersJson) ? submission.answersJson.length : 0,
           createdAt: submission.createdAt,
         }))
-        .sort((left, right) =>
-          left.participantName.localeCompare(right.participantName, 'tr-TR')
-        ),
+        .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || ''))),
     },
   });
 }
@@ -279,7 +276,6 @@ async function getAdminSubmissionDetail(req, res) {
       teamName: submission.pairName,
       pairKey: submission.pairNameLower,
       participantName: submission.respondentName,
-      genderType: submission.genderType,
       createdAt: submission.createdAt,
       answers: submission.answersJson || [],
     },

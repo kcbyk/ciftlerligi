@@ -11,7 +11,7 @@
     landingHeadline: 'Ismini yaz, takimina katil, ankete gec',
     rules: [
       'Ismini ve takim adini dogru yaz.',
-      'Kiz ve erkek sorulari birbirinden ayridir.',
+      'Tek bir anket acilir ve 30 soru gelir.',
       'Tum sorular zorunludur.',
       'Ayni isim ayni takimda tekrar kullanilamaz.',
       'Admin panelinden takimlar ve cevaplar gorulur.',
@@ -26,20 +26,15 @@
     backgroundImageUrl: '/assets/bg-placeholder.svg',
     watermarkEnabled: true,
     logoSize: 116,
-    infoText: 'Ankete baslamak icin kendi adini, takim adini ve rolu sec.',
+    infoText: 'Ankete baslamak icin kendi adini ve takim adini yaz.',
     entryFormTitle: 'Anket Girisi',
     participantLabel: 'Kendi ismin',
     participantPlaceholder: 'Orn: Ayse',
     teamLabel: 'Takim ismi',
     teamPlaceholder: 'Orn: Yildiz Takim',
-    rolePrompt: 'Hangi tarafin anketini dolduruyorsun?',
-    femaleCardTitle: 'Kiz Tarafi',
-    femaleCardDescription: 'Sadece kiz sorulari acilir.',
-    maleCardTitle: 'Erkek Tarafi',
-    maleCardDescription: 'Sadece erkek sorulari acilir.',
     flowTitle: 'Nasil Calisiyor?',
-    flowStepOne: '1. Ana sayfada iki kutuyu doldur ve tarafini sec.',
-    flowStepTwo: '2. Sistemde senin tarafina ait 30 soru acilir.',
+    flowStepOne: '1. Ana sayfada ismini ve takim ismini yaz.',
+    flowStepTwo: '2. Sistemde tek bir 30 soruluk anket acilir.',
     flowStepThree: '3. Admin panelde takimlar, kisiler ve cevaplar tek tek izlenir.',
   };
 
@@ -128,17 +123,6 @@
     setText('[data-entry-form-title]', settings.entryFormTitle || FALLBACK_SETTINGS.entryFormTitle);
     setText('[data-participant-label]', settings.participantLabel || FALLBACK_SETTINGS.participantLabel);
     setText('[data-team-label]', settings.teamLabel || FALLBACK_SETTINGS.teamLabel);
-    setText('[data-role-prompt]', settings.rolePrompt || FALLBACK_SETTINGS.rolePrompt);
-    setText('[data-female-card-title]', settings.femaleCardTitle || FALLBACK_SETTINGS.femaleCardTitle);
-    setText(
-      '[data-female-card-description]',
-      settings.femaleCardDescription || FALLBACK_SETTINGS.femaleCardDescription
-    );
-    setText('[data-male-card-title]', settings.maleCardTitle || FALLBACK_SETTINGS.maleCardTitle);
-    setText(
-      '[data-male-card-description]',
-      settings.maleCardDescription || FALLBACK_SETTINGS.maleCardDescription
-    );
     setText('[data-flow-title]', settings.flowTitle || FALLBACK_SETTINGS.flowTitle);
     setText('[data-flow-step-one]', settings.flowStepOne || FALLBACK_SETTINGS.flowStepOne);
     setText('[data-flow-step-two]', settings.flowStepTwo || FALLBACK_SETTINGS.flowStepTwo);

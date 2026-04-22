@@ -4,13 +4,8 @@
   shared.applyBranding(settings);
 
   const state = {
-    activeGender: 'male',
     settings: null,
-    questionsByGender: {
-      male: [],
-      female: [],
-    },
-    resultsLoaded: false,
+    teamsLoaded: false,
     teams: [],
     selectedTeamKey: '',
     selectedTeamName: '',
@@ -20,61 +15,21 @@
 
   const refs = {
     logoutButton: document.querySelector('#admin-logout-btn'),
-    panelTabs: document.querySelectorAll('[data-admin-tab]'),
-    tabPanels: document.querySelectorAll('[data-admin-panel]'),
-    loadTeamsButton: document.querySelector('#admin-load-teams-btn'),
+    refreshButton: document.querySelector('#admin-refresh-btn'),
     teamsCount: document.querySelector('#admin-teams-count'),
     teamsList: document.querySelector('#admin-teams-list'),
     participantsCount: document.querySelector('#admin-participants-count'),
     participantsList: document.querySelector('#admin-participants-list'),
     answerDetail: document.querySelector('#admin-answer-detail'),
     resultsFeedback: document.querySelector('#admin-results-feedback'),
-    rulesList: document.querySelector('#admin-rules-list'),
-    addRuleButton: document.querySelector('#admin-add-rule-btn'),
-    saveRulesButton: document.querySelector('#admin-save-rules-btn'),
-    rulesFeedback: document.querySelector('#admin-rules-feedback'),
-    genderTabs: document.querySelectorAll('[data-gender-tab]'),
-    newQuestionForm: document.querySelector('#admin-new-question-form'),
-    questionsList: document.querySelector('#admin-questions-list'),
-    questionsFeedback: document.querySelector('#admin-questions-feedback'),
     siteSettingsForm: document.querySelector('#admin-site-settings-form'),
     siteSettingsFeedback: document.querySelector('#admin-site-settings-feedback'),
+    rulesList: document.querySelector('#admin-rules-list'),
+    addRuleButton: document.querySelector('#admin-add-rule-btn'),
   };
 
   const currentPath = window.location.pathname.replace(/\/+$/, '');
   const loginPath = currentPath.replace(/\/dashboard$/, '');
-
-  function parseOptionsText(rawText) {
-    return String(rawText || '')
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 12);
-  }
-
-  function optionsToTextarea(options) {
-    if (!Array.isArray(options)) {
-      return '';
-    }
-
-    return options.join('\n');
-  }
-
-  function requiresOptions(questionType) {
-    return questionType === 'single_choice' || questionType === 'multi_choice';
-  }
-
-  function getGenderLabel(genderType) {
-    return genderType === 'female' ? 'Kiz' : 'Erkek';
-  }
-
-  function formatAnswerValue(value) {
-    if (Array.isArray(value)) {
-      return value.join(', ');
-    }
-
-    return String(value ?? '-');
-  }
 
   function handleAuthError(error) {
     if (error && error.status === 401) {
@@ -85,14 +40,12 @@
     return false;
   }
 
-  function switchTab(nextTab) {
-    refs.panelTabs.forEach((button) => {
-      button.classList.toggle('is-active', button.dataset.adminTab === nextTab);
-    });
+  function formatAnswerValue(value) {
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
 
-    refs.tabPanels.forEach((panel) => {
-      panel.classList.toggle('is-active', panel.dataset.adminPanel === nextTab);
-    });
+    return String(value ?? '-');
   }
 
   function createRuleInput(initialValue = '') {
@@ -126,6 +79,7 @@
 
     refs.rulesList.innerHTML = '';
     const rules = Array.isArray(ruleList) && ruleList.length ? ruleList : [''];
+
     rules.forEach((ruleText) => {
       refs.rulesList.appendChild(createRuleInput(ruleText));
     });
@@ -142,294 +96,47 @@
       .slice(0, 15);
   }
 
-  async function loadAdminSettings() {
-    const payload = await shared.apiFetch('/api/admin/settings', { method: 'GET' });
-    state.settings = payload.data || {};
-    renderRules(state.settings.rules || []);
-    renderSiteSettings(state.settings);
-  }
-
   function renderSiteSettings(settingsPayload = {}) {
     if (!refs.siteSettingsForm) {
       return;
     }
 
-    const formFields = [
+    const fields = [
       'heroTitle',
       'heroDescription',
       'landingHeadline',
       'infoText',
       'entryFormTitle',
-      'primaryButtonText',
       'participantLabel',
       'participantPlaceholder',
       'teamLabel',
       'teamPlaceholder',
-      'rolePrompt',
-      'femaleCardTitle',
-      'femaleCardDescription',
-      'maleCardTitle',
-      'maleCardDescription',
+      'primaryButtonText',
+      'submitButtonText',
+      'completionMessage',
       'flowTitle',
       'flowStepOne',
       'flowStepTwo',
       'flowStepThree',
-      'submitButtonText',
-      'completionMessage',
     ];
 
-    formFields.forEach((fieldName) => {
+    fields.forEach((fieldName) => {
       const input = refs.siteSettingsForm.elements.namedItem(fieldName);
       if (input) {
         input.value = settingsPayload[fieldName] || '';
       }
     });
+
+    renderRules(settingsPayload.rules || []);
   }
 
-  function normalizeQuestionPayloadFromForm(form, genderType) {
-    const formData = new FormData(form);
-    const questionType = String(formData.get('questionType') || '').trim();
-    const options = parseOptionsText(formData.get('optionsText'));
-    const orderValue = Number(formData.get('orderIndex'));
-
-    const payload = {
-      genderType,
-      questionText: String(formData.get('questionText') || '').trim(),
-      questionType,
-      orderIndex: Number.isFinite(orderValue) && orderValue > 0 ? Math.floor(orderValue) : 1,
-      isActive: formData.get('isActive') === 'on',
-      approved: formData.get('approved') === 'on',
-      options: requiresOptions(questionType) ? options : [],
-    };
-
-    if (!payload.questionText) {
-      const error = new Error('Soru metni bos olamaz.');
-      error.status = 400;
-      throw error;
-    }
-
-    if (!payload.questionType) {
-      const error = new Error('Soru tipi secmelisin.');
-      error.status = 400;
-      throw error;
-    }
-
-    if (requiresOptions(questionType) && !payload.options.length) {
-      const error = new Error('Secmeli sorularda en az bir secenek gerekli.');
-      error.status = 400;
-      throw error;
-    }
-
-    return payload;
-  }
-
-  async function loadQuestionsForGender(genderType) {
-    const payload = await shared.apiFetch(
-      `/api/admin/questions?genderType=${encodeURIComponent(genderType)}`,
-      {
-        method: 'GET',
-      }
-    );
-
-    const questions = Array.isArray(payload.data) ? payload.data : [];
-    state.questionsByGender[genderType] = questions;
-  }
-
-  function getActiveQuestions() {
-    return state.questionsByGender[state.activeGender] || [];
-  }
-
-  function buildQuestionCard(question) {
-    const card = document.createElement('article');
-    card.className = 'admin-question-card';
-    card.dataset.questionId = question.id;
-
-    const heading = document.createElement('h3');
-    heading.textContent = `${getGenderLabel(question.genderType)} - ${question.questionText}`;
-
-    const textLabel = document.createElement('label');
-    textLabel.textContent = 'Soru metni';
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.value = question.questionText || '';
-    textInput.maxLength = 260;
-    textLabel.appendChild(textInput);
-
-    const grid = document.createElement('div');
-    grid.className = 'admin-question-grid';
-
-    const typeLabel = document.createElement('label');
-    typeLabel.textContent = 'Soru tipi';
-    const typeSelect = document.createElement('select');
-    ['single_choice', 'multi_choice', 'open_text', 'rating'].forEach((typeValue) => {
-      const option = document.createElement('option');
-      option.value = typeValue;
-      option.textContent = typeValue;
-      option.selected = question.questionType === typeValue;
-      typeSelect.appendChild(option);
+  async function loadAdminSettings() {
+    const payload = await shared.apiFetch('/api/admin/settings', {
+      method: 'GET',
     });
-    typeLabel.appendChild(typeSelect);
 
-    const orderLabel = document.createElement('label');
-    orderLabel.textContent = 'Sira';
-    const orderInput = document.createElement('input');
-    orderInput.type = 'number';
-    orderInput.min = '1';
-    orderInput.value = Number(question.orderIndex || 1);
-    orderLabel.appendChild(orderInput);
-
-    grid.appendChild(typeLabel);
-    grid.appendChild(orderLabel);
-
-    const optionsLabel = document.createElement('label');
-    optionsLabel.textContent = 'Secenekler (her satira bir secenek)';
-    const optionsTextarea = document.createElement('textarea');
-    optionsTextarea.value = optionsToTextarea(question.options);
-    optionsLabel.appendChild(optionsTextarea);
-
-    const checks = document.createElement('div');
-    checks.className = 'admin-inline-checks';
-
-    const activeLabel = document.createElement('label');
-    activeLabel.className = 'admin-check-item';
-    const activeInput = document.createElement('input');
-    activeInput.type = 'checkbox';
-    activeInput.checked = Boolean(question.isActive);
-    activeLabel.appendChild(activeInput);
-    activeLabel.append(' Aktif');
-
-    const approvedLabel = document.createElement('label');
-    approvedLabel.className = 'admin-check-item';
-    const approvedInput = document.createElement('input');
-    approvedInput.type = 'checkbox';
-    approvedInput.checked = Boolean(question.approved);
-    approvedLabel.appendChild(approvedInput);
-    approvedLabel.append(' Onayli');
-
-    checks.appendChild(activeLabel);
-    checks.appendChild(approvedLabel);
-
-    const actions = document.createElement('div');
-    actions.className = 'admin-actions-row';
-
-    const saveButton = document.createElement('button');
-    saveButton.type = 'button';
-    saveButton.className = 'primary-btn';
-    saveButton.textContent = 'Guncelle';
-
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.className = 'ghost-btn';
-    deleteButton.textContent = 'Soruyu Sil';
-
-    actions.appendChild(saveButton);
-    actions.appendChild(deleteButton);
-
-    const localFeedback = document.createElement('div');
-    localFeedback.className = 'hidden';
-
-    async function handleSave() {
-      shared.hideMessage(localFeedback);
-      const questionType = String(typeSelect.value || '').trim();
-      const payload = {
-        questionText: String(textInput.value || '').trim(),
-        questionType,
-        orderIndex: Math.max(1, Number(orderInput.value || 1)),
-        options: requiresOptions(questionType) ? parseOptionsText(optionsTextarea.value) : [],
-        isActive: activeInput.checked,
-        approved: approvedInput.checked,
-      };
-
-      if (!payload.questionText) {
-        shared.showMessage(localFeedback, 'Soru metni bos olamaz.', 'error');
-        return;
-      }
-
-      if (requiresOptions(questionType) && !payload.options.length) {
-        shared.showMessage(localFeedback, 'Secmeli soru icin en az bir secenek gerekli.', 'error');
-        return;
-      }
-
-      saveButton.disabled = true;
-      deleteButton.disabled = true;
-
-      try {
-        await shared.apiFetch(`/api/admin/questions/${encodeURIComponent(question.id)}`, {
-          method: 'PATCH',
-          body: JSON.stringify(payload),
-        });
-
-        shared.showMessage(localFeedback, 'Soru guncellendi.', 'success');
-        await loadQuestionsForGender(state.activeGender);
-        renderQuestions();
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          shared.showMessage(localFeedback, error.message, 'error');
-        }
-      } finally {
-        saveButton.disabled = false;
-        deleteButton.disabled = false;
-      }
-    }
-
-    async function handleDelete() {
-      shared.hideMessage(localFeedback);
-      if (!window.confirm('Bu soruyu silmek istiyor musun?')) {
-        return;
-      }
-
-      saveButton.disabled = true;
-      deleteButton.disabled = true;
-
-      try {
-        await shared.apiFetch(`/api/admin/questions/${encodeURIComponent(question.id)}`, {
-          method: 'DELETE',
-        });
-
-        shared.showMessage(refs.questionsFeedback, 'Soru silindi.', 'success');
-        await loadQuestionsForGender(state.activeGender);
-        renderQuestions();
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          shared.showMessage(localFeedback, error.message, 'error');
-        }
-      } finally {
-        saveButton.disabled = false;
-        deleteButton.disabled = false;
-      }
-    }
-
-    saveButton.addEventListener('click', handleSave);
-    deleteButton.addEventListener('click', handleDelete);
-
-    card.appendChild(heading);
-    card.appendChild(textLabel);
-    card.appendChild(grid);
-    card.appendChild(optionsLabel);
-    card.appendChild(checks);
-    card.appendChild(actions);
-    card.appendChild(localFeedback);
-    return card;
-  }
-
-  function renderQuestions() {
-    if (!refs.questionsList) {
-      return;
-    }
-
-    refs.questionsList.innerHTML = '';
-    const list = getActiveQuestions();
-    if (!list.length) {
-      const empty = document.createElement('div');
-      empty.className = 'info-box';
-      empty.textContent = 'Bu grup icin soru bulunmuyor.';
-      refs.questionsList.appendChild(empty);
-      return;
-    }
-
-    list.forEach((question) => {
-      refs.questionsList.appendChild(buildQuestionCard(question));
-    });
+    state.settings = payload.data || {};
+    renderSiteSettings(state.settings);
   }
 
   function renderTeams() {
@@ -440,10 +147,10 @@
     refs.teamsCount.textContent = String(state.teams.length);
     refs.teamsList.innerHTML = '';
 
-    if (!state.resultsLoaded) {
+    if (!state.teamsLoaded) {
       const info = document.createElement('div');
       info.className = 'info-box';
-      info.textContent = 'Takimlari gormek icin Baslat butonuna bas.';
+      info.textContent = 'Kayitlar yukleniyor...';
       refs.teamsList.appendChild(info);
       return;
     }
@@ -451,7 +158,7 @@
     if (!state.teams.length) {
       const empty = document.createElement('div');
       empty.className = 'info-box';
-      empty.textContent = 'Henuz kayitli takim bulunmuyor.';
+      empty.textContent = 'Henuz takim kaydi bulunmuyor.';
       refs.teamsList.appendChild(empty);
       return;
     }
@@ -463,7 +170,7 @@
       button.classList.toggle('is-active', state.selectedTeamKey === team.pairKey);
 
       const title = document.createElement('strong');
-      title.textContent = team.teamName || team.pairName;
+      title.textContent = team.teamName || team.pairName || 'Takim';
 
       const meta = document.createElement('span');
       meta.className = 'admin-browser-meta';
@@ -471,7 +178,6 @@
 
       button.appendChild(title);
       button.appendChild(meta);
-
       button.addEventListener('click', async () => {
         shared.hideMessage(refs.resultsFeedback);
         await loadParticipants(team.pairKey);
@@ -489,10 +195,10 @@
     refs.participantsCount.textContent = String(state.participants.length);
     refs.participantsList.innerHTML = '';
 
-    if (!state.resultsLoaded) {
+    if (!state.teamsLoaded) {
       const info = document.createElement('div');
       info.className = 'info-box';
-      info.textContent = 'Baslat butonundan sonra takim secerek kisileri gorebilirsin.';
+      info.textContent = 'Kayitlar yukleniyor...';
       refs.participantsList.appendChild(info);
       return;
     }
@@ -500,7 +206,7 @@
     if (!state.selectedTeamKey) {
       const info = document.createElement('div');
       info.className = 'info-box';
-      info.textContent = 'Once bir takim sec.';
+      info.textContent = 'Soldan bir takim sec.';
       refs.participantsList.appendChild(info);
       return;
     }
@@ -514,24 +220,24 @@
     }
 
     state.participants.forEach((participant) => {
-      const item = document.createElement('article');
-      item.className = 'admin-browser-item';
-      item.classList.toggle('is-active', state.selectedSubmission?.id === participant.id);
+      const card = document.createElement('article');
+      card.className = 'admin-browser-item';
+      card.classList.toggle('is-active', state.selectedSubmission?.id === participant.id);
 
-      const infoWrap = document.createElement('button');
-      infoWrap.type = 'button';
-      infoWrap.className = 'admin-item-main';
+      const mainButton = document.createElement('button');
+      mainButton.type = 'button';
+      mainButton.className = 'admin-item-main';
 
       const title = document.createElement('strong');
-      title.textContent = participant.participantName;
+      title.textContent = participant.participantName || 'Katilimci';
 
       const meta = document.createElement('span');
       meta.className = 'admin-browser-meta';
-      meta.textContent = `${getGenderLabel(participant.genderType)} - ${participant.answerCount} cevap`;
+      meta.textContent = `${participant.answerCount || 0} cevap`;
 
-      infoWrap.appendChild(title);
-      infoWrap.appendChild(meta);
-      infoWrap.addEventListener('click', async () => {
+      mainButton.appendChild(title);
+      mainButton.appendChild(meta);
+      mainButton.addEventListener('click', async () => {
         shared.hideMessage(refs.resultsFeedback);
         await loadSubmission(participant.id);
       });
@@ -544,9 +250,9 @@
         await deleteParticipant(participant.id, state.selectedTeamKey);
       });
 
-      item.appendChild(infoWrap);
-      item.appendChild(deleteButton);
-      refs.participantsList.appendChild(item);
+      card.appendChild(mainButton);
+      card.appendChild(deleteButton);
+      refs.participantsList.appendChild(card);
     });
   }
 
@@ -557,10 +263,10 @@
 
     refs.answerDetail.innerHTML = '';
 
-    if (!state.resultsLoaded) {
+    if (!state.teamsLoaded) {
       const info = document.createElement('div');
       info.className = 'info-box';
-      info.textContent = 'Cevaplari gormek icin Baslat ile verileri ac.';
+      info.textContent = 'Kayitlar yukleniyor...';
       refs.answerDetail.appendChild(info);
       return;
     }
@@ -568,14 +274,14 @@
     if (!state.selectedSubmission) {
       const info = document.createElement('div');
       info.className = 'info-box';
-      info.textContent = 'Bir kisi secildiginde cevaplar burada gosterilir.';
+      info.textContent = 'Bir kisi secince cevaplar burada gorunur.';
       refs.answerDetail.appendChild(info);
       return;
     }
 
     const summary = document.createElement('div');
     summary.className = 'info-box';
-    summary.innerHTML = `Takim: <strong>${state.selectedSubmission.teamName}</strong><br/>Kisi: <strong>${state.selectedSubmission.participantName}</strong><br/>Taraf: <strong>${getGenderLabel(state.selectedSubmission.genderType)}</strong><br/>Tarih: <strong>${state.selectedSubmission.createdAt || '-'}</strong>`;
+    summary.innerHTML = `Takim: <strong>${state.selectedSubmission.teamName}</strong><br/>Kisi: <strong>${state.selectedSubmission.participantName}</strong><br/>Tarih: <strong>${state.selectedSubmission.createdAt || '-'}</strong>`;
 
     const actions = document.createElement('div');
     actions.className = 'admin-actions-row';
@@ -603,7 +309,7 @@
 
       const title = document.createElement('h4');
       title.className = 'admin-answer-title';
-      title.textContent = `${index + 1}. ${answer.questionText}`;
+      title.textContent = `${index + 1}. ${answer.questionText || 'Soru'}`;
 
       const value = document.createElement('p');
       value.className = 'admin-answer-value';
@@ -617,7 +323,7 @@
     if (!answers.length) {
       const empty = document.createElement('div');
       empty.className = 'info-box';
-      empty.textContent = 'Bu kayitta gosterilecek cevap bulunmuyor.';
+      empty.textContent = 'Bu kayitta cevap bulunmuyor.';
       list.appendChild(empty);
     }
 
@@ -626,8 +332,11 @@
     refs.answerDetail.appendChild(list);
   }
 
-  async function loadTeams({ preserveSelection = false } = {}) {
-    refs.loadTeamsButton.disabled = true;
+  async function loadTeams({ preserveSelection = false, preserveSubmission = false } = {}) {
+    if (refs.refreshButton) {
+      refs.refreshButton.disabled = true;
+    }
+
     shared.hideMessage(refs.resultsFeedback);
 
     try {
@@ -635,21 +344,23 @@
         method: 'GET',
       });
 
-      state.resultsLoaded = true;
       state.teams = Array.isArray(payload.data) ? payload.data : [];
+      state.teamsLoaded = true;
 
-      const selectedStillExists = preserveSelection
-        ? state.teams.find((team) => team.pairKey === state.selectedTeamKey)
-        : null;
-
-      if (!selectedStillExists) {
-        state.selectedTeamKey = '';
-        state.selectedTeamName = '';
-        state.participants = [];
-        state.selectedSubmission = null;
-      }
+      const selectedTeamStillExists =
+        preserveSelection && state.teams.some((team) => team.pairKey === state.selectedTeamKey);
 
       renderTeams();
+
+      if (selectedTeamStillExists) {
+        await loadParticipants(state.selectedTeamKey, { preserveSubmission });
+        return;
+      }
+
+      state.selectedTeamKey = '';
+      state.selectedTeamName = '';
+      state.participants = [];
+      state.selectedSubmission = null;
       renderParticipants();
       renderAnswerDetail();
     } catch (error) {
@@ -661,7 +372,9 @@
         );
       }
     } finally {
-      refs.loadTeamsButton.disabled = false;
+      if (refs.refreshButton) {
+        refs.refreshButton.disabled = false;
+      }
     }
   }
 
@@ -675,26 +388,26 @@
       state.selectedTeamName = payload.data?.teamName || '';
       state.participants = Array.isArray(payload.data?.participants) ? payload.data.participants : [];
 
-      const submissionStillExists = preserveSubmission
-        ? state.participants.find((participant) => participant.id === state.selectedSubmission?.id)
-        : null;
-
-      if (!submissionStillExists) {
-        state.selectedSubmission = null;
-      }
+      const selectedSubmissionId = preserveSubmission ? state.selectedSubmission?.id : '';
+      const selectedSubmissionStillExists = selectedSubmissionId
+        ? state.participants.some((participant) => participant.id === selectedSubmissionId)
+        : false;
 
       renderTeams();
       renderParticipants();
-      renderAnswerDetail();
 
-      if (submissionStillExists) {
-        await loadSubmission(submissionStillExists.id);
+      if (selectedSubmissionStillExists) {
+        await loadSubmission(selectedSubmissionId);
+        return;
       }
+
+      state.selectedSubmission = null;
+      renderAnswerDetail();
     } catch (error) {
       if (!handleAuthError(error)) {
         shared.showMessage(
           refs.resultsFeedback,
-          error.message || 'Takimdaki kisiler yuklenemedi.',
+          error.message || 'Takim kisileri yuklenemedi.',
           'error'
         );
       }
@@ -717,7 +430,7 @@
       if (!handleAuthError(error)) {
         shared.showMessage(
           refs.resultsFeedback,
-          error.message || 'Kisi cevaplari yuklenemedi.',
+          error.message || 'Cevaplar yuklenemedi.',
           'error'
         );
       }
@@ -741,21 +454,11 @@
         method: 'DELETE',
       });
 
-      await loadTeams({ preserveSelection: true });
-      const teamStillExists = state.teams.find((team) => team.pairKey === pairKey);
-
-      if (teamStillExists) {
-        await loadParticipants(pairKey);
-      } else {
-        state.selectedTeamKey = '';
-        state.selectedTeamName = '';
-        state.participants = [];
-        state.selectedSubmission = null;
-        renderTeams();
-        renderParticipants();
-        renderAnswerDetail();
+      if (pairKey) {
+        state.selectedTeamKey = pairKey;
       }
 
+      await loadTeams({ preserveSelection: true, preserveSubmission: true });
       shared.showMessage(refs.resultsFeedback, 'Kisi kaydi silindi.', 'success');
     } catch (error) {
       if (!handleAuthError(error)) {
@@ -764,76 +467,12 @@
     }
   }
 
-  async function bootstrapDashboard() {
-    try {
-      await shared.apiFetch('/api/admin/me', {
-        method: 'GET',
-      });
-    } catch (_error) {
-      window.location.href = loginPath;
-      return;
-    }
-
-    try {
-      await Promise.all([
-        loadAdminSettings(),
-        loadQuestionsForGender('male'),
-        loadQuestionsForGender('female'),
-      ]);
-      renderQuestions();
-      renderTeams();
-      renderParticipants();
-      renderAnswerDetail();
-    } catch (error) {
-      if (!handleAuthError(error)) {
-        shared.showMessage(
-          refs.questionsFeedback,
-          error.message || 'Panel verileri yuklenemedi.',
-          'error'
-        );
-      }
-    }
-  }
-
-  refs.loadTeamsButton?.addEventListener('click', async () => {
-    await loadTeams();
-  });
-
-  refs.panelTabs.forEach((tabButton) => {
-    tabButton.addEventListener('click', () => {
-      switchTab(tabButton.dataset.adminTab || 'results');
-    });
+  refs.refreshButton?.addEventListener('click', async () => {
+    await loadTeams({ preserveSelection: true, preserveSubmission: true });
   });
 
   refs.addRuleButton?.addEventListener('click', () => {
     refs.rulesList?.appendChild(createRuleInput(''));
-  });
-
-  refs.saveRulesButton?.addEventListener('click', async () => {
-    shared.hideMessage(refs.rulesFeedback);
-    const rules = collectRulesFromForm();
-    if (!rules.length) {
-      shared.showMessage(refs.rulesFeedback, 'En az bir kural girmelisin.', 'error');
-      return;
-    }
-
-    refs.saveRulesButton.disabled = true;
-    try {
-      const payload = await shared.apiFetch('/api/admin/settings', {
-        method: 'PATCH',
-        body: JSON.stringify({ rules }),
-      });
-
-      state.settings = payload.data || state.settings;
-      renderRules(state.settings?.rules || rules);
-      shared.showMessage(refs.rulesFeedback, 'Kurallar kaydedildi.', 'success');
-    } catch (error) {
-      if (!handleAuthError(error)) {
-        shared.showMessage(refs.rulesFeedback, error.message, 'error');
-      }
-    } finally {
-      refs.saveRulesButton.disabled = false;
-    }
   });
 
   refs.siteSettingsForm?.addEventListener('submit', async (event) => {
@@ -844,6 +483,7 @@
     const payload = Object.fromEntries(
       Array.from(formData.entries()).map(([key, value]) => [key, String(value || '').trim()])
     );
+    payload.rules = collectRulesFromForm();
 
     const submitButton = refs.siteSettingsForm.querySelector('button[type="submit"]');
     if (submitButton) {
@@ -856,86 +496,12 @@
         body: JSON.stringify(payload),
       });
 
-      state.settings = response.data || state.settings;
+      state.settings = response.data || {};
       renderSiteSettings(state.settings);
-      shared.showMessage(refs.siteSettingsFeedback, 'Ana sayfa metinleri kaydedildi.', 'success');
+      shared.showMessage(refs.siteSettingsFeedback, 'Ayarlar kaydedildi.', 'success');
     } catch (error) {
       if (!handleAuthError(error)) {
         shared.showMessage(refs.siteSettingsFeedback, error.message, 'error');
-      }
-    } finally {
-      if (submitButton) {
-        submitButton.disabled = false;
-      }
-    }
-  });
-
-  refs.genderTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const nextGender = tab.dataset.genderTab === 'female' ? 'female' : 'male';
-      if (state.activeGender === nextGender) {
-        return;
-      }
-
-      state.activeGender = nextGender;
-      refs.genderTabs.forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.genderTab === state.activeGender);
-      });
-
-      renderQuestions();
-      shared.hideMessage(refs.questionsFeedback);
-    });
-  });
-
-  refs.newQuestionForm?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    shared.hideMessage(refs.questionsFeedback);
-
-    let payload;
-    try {
-      payload = normalizeQuestionPayloadFromForm(refs.newQuestionForm, state.activeGender);
-    } catch (error) {
-      shared.showMessage(refs.questionsFeedback, error.message, 'error');
-      return;
-    }
-
-    const submitButton = refs.newQuestionForm.querySelector('button[type="submit"]');
-    if (submitButton) {
-      submitButton.disabled = true;
-    }
-
-    try {
-      await shared.apiFetch('/api/admin/questions', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-
-      shared.showMessage(
-        refs.questionsFeedback,
-        `${getGenderLabel(state.activeGender)} soru listesine yeni soru eklendi.`,
-        'success'
-      );
-
-      refs.newQuestionForm.reset();
-      const orderInput = refs.newQuestionForm.querySelector('#new-question-order');
-      if (orderInput) {
-        orderInput.value = '1';
-      }
-
-      const activeInput = refs.newQuestionForm.querySelector('#new-question-active');
-      const approvedInput = refs.newQuestionForm.querySelector('#new-question-approved');
-      if (activeInput) {
-        activeInput.checked = true;
-      }
-      if (approvedInput) {
-        approvedInput.checked = true;
-      }
-
-      await loadQuestionsForGender(state.activeGender);
-      renderQuestions();
-    } catch (error) {
-      if (!handleAuthError(error)) {
-        shared.showMessage(refs.questionsFeedback, error.message, 'error');
       }
     } finally {
       if (submitButton) {
@@ -956,6 +522,29 @@
       window.location.href = loginPath;
     }
   });
+
+  async function bootstrapDashboard() {
+    try {
+      await shared.apiFetch('/api/admin/me', {
+        method: 'GET',
+      });
+    } catch (_error) {
+      window.location.href = loginPath;
+      return;
+    }
+
+    try {
+      await Promise.all([loadAdminSettings(), loadTeams()]);
+    } catch (error) {
+      if (!handleAuthError(error)) {
+        shared.showMessage(
+          refs.resultsFeedback,
+          error.message || 'Panel verileri yuklenemedi.',
+          'error'
+        );
+      }
+    }
+  }
 
   await bootstrapDashboard();
 })();

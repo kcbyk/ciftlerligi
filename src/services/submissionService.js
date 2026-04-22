@@ -93,7 +93,11 @@ async function createSubmission({
         return null;
       }
 
-      if (!question.isActive || !question.approved || question.genderType !== genderType) {
+      if (
+        !question.isActive ||
+        !question.approved ||
+        (genderType && question.genderType !== genderType)
+      ) {
         return null;
       }
 
@@ -210,15 +214,14 @@ async function getPairSummaries() {
 
 async function getSubmissionsByPairKey(pairKey) {
   const safePairKey = normalizeLookupKey(pairKey);
-  const snapshot = await submissionsCollection()
-    .where('pairNameLower', '==', safePairKey)
-    .orderBy('createdAt', 'desc')
-    .get();
+  const snapshot = await submissionsCollection().where('pairNameLower', '==', safePairKey).get();
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs
+    .map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
 }
 
 async function deleteSubmission(submissionId) {

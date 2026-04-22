@@ -22,291 +22,172 @@
           <img class="brand-logo" data-logo src="/assets/site-logo.jpeg" alt="Logo" />
           <div class="brand-text">
             <h1>Admin Panel</h1>
-            <p>Takimlar, kisiler, cevaplar ve soru yonetimi</p>
+            <p>Takimlari, kisileri ve cevaplari tek ekranda yonet</p>
           </div>
         </div>
 
         <button id="admin-logout-btn" class="secondary-btn" type="button">Cikis</button>
       </header>
 
-      <section class="glass-card form-card">
-        <div class="admin-panel-tabs">
-          <button
-            class="secondary-btn is-active"
-            type="button"
-            data-admin-tab="results"
-          >
-            Sonuclar
-          </button>
-          <button class="secondary-btn" type="button" data-admin-tab="questions">
-            Soru Yonetimi
-          </button>
-          <button class="secondary-btn" type="button" data-admin-tab="site">
-            Ana Sayfa Metinleri
-          </button>
-          <button class="secondary-btn" type="button" data-admin-tab="rules">
-            Kurallar
-          </button>
+      <section class="glass-card form-card admin-simple-section">
+        <div class="admin-section-head">
+          <div>
+            <h2>Kayitlar</h2>
+            <p class="section-note">
+              Soldan takim sec, ortadan kisi sec, sagdan cevaplari gor. Gerekirse kisiyi sil.
+            </p>
+          </div>
+
+          <button id="admin-refresh-btn" type="button" class="primary-btn">Yenile</button>
         </div>
 
-        <section class="admin-tab-panel is-active" data-admin-panel="results">
-          <div class="admin-section-head">
-            <div>
-              <h2>Sonuc Ekrani</h2>
-              <p class="section-note">
-                Baslat butonuna bas, takimlari gor. Takim secince kisiler, kisi secince cevaplar acilir.
-              </p>
-            </div>
+        <div id="admin-results-feedback" class="hidden"></div>
 
-            <button id="admin-load-teams-btn" type="button" class="primary-btn">Baslat</button>
+        <div class="admin-results-grid">
+          <section class="admin-browser-card">
+            <div class="admin-browser-head">
+              <h3>Takimlar</h3>
+              <span id="admin-teams-count" class="admin-counter">0</span>
+            </div>
+            <div id="admin-teams-list" class="admin-browser-list"></div>
+          </section>
+
+          <section class="admin-browser-card">
+            <div class="admin-browser-head">
+              <h3>Kisiler</h3>
+              <span id="admin-participants-count" class="admin-counter">0</span>
+            </div>
+            <div id="admin-participants-list" class="admin-browser-list"></div>
+          </section>
+
+          <section class="admin-browser-card admin-answer-column">
+            <div class="admin-browser-head">
+              <h3>Cevaplar</h3>
+            </div>
+            <div id="admin-answer-detail" class="admin-answer-detail"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="glass-card form-card admin-simple-section">
+        <div class="admin-section-head">
+          <div>
+            <h2>Ana Sayfa Ayarlari</h2>
+            <p class="section-note">
+              Ana sayfada ve anket sonunda gorunen yazilari buradan degistirebilirsin.
+            </p>
+          </div>
+        </div>
+
+        <form id="admin-site-settings-form" class="admin-question-form admin-settings-form">
+          <div class="admin-settings-grid">
+            <label for="site-hero-title">
+              Ust baslik
+              <input id="site-hero-title" name="heroTitle" type="text" maxlength="120" />
+            </label>
+
+            <label for="site-hero-description">
+              Ust aciklama
+              <input id="site-hero-description" name="heroDescription" type="text" maxlength="180" />
+            </label>
           </div>
 
-          <div id="admin-results-feedback" class="hidden"></div>
+          <label for="site-landing-headline">
+            Ana baslik
+            <input id="site-landing-headline" name="landingHeadline" type="text" maxlength="180" />
+          </label>
 
-          <div class="admin-results-grid">
-            <section class="admin-browser-card">
-              <div class="admin-browser-head">
-                <h3>Takimlar</h3>
-                <span id="admin-teams-count" class="admin-counter">0</span>
-              </div>
-              <div id="admin-teams-list" class="admin-browser-list"></div>
-            </section>
+          <label for="site-info-text">
+            Giris aciklamasi
+            <textarea id="site-info-text" name="infoText"></textarea>
+          </label>
 
-            <section class="admin-browser-card">
-              <div class="admin-browser-head">
-                <h3>Kisiler</h3>
-                <span id="admin-participants-count" class="admin-counter">0</span>
-              </div>
-              <div id="admin-participants-list" class="admin-browser-list"></div>
-            </section>
+          <div class="admin-settings-grid">
+            <label for="site-entry-form-title">
+              Form basligi
+              <input id="site-entry-form-title" name="entryFormTitle" type="text" maxlength="100" />
+            </label>
 
-            <section class="admin-browser-card admin-answer-column">
-              <div class="admin-browser-head">
-                <h3>Cevaplar</h3>
-              </div>
-              <div id="admin-answer-detail" class="admin-answer-detail"></div>
-            </section>
-          </div>
-        </section>
-
-        <section class="admin-tab-panel" data-admin-panel="questions">
-          <h2>Soru Yonetimi</h2>
-
-          <div class="admin-gender-tabs">
-            <button class="secondary-btn is-active" type="button" data-gender-tab="male">
-              Erkek Sorulari
-            </button>
-            <button class="secondary-btn" type="button" data-gender-tab="female">
-              Kiz Sorulari
-            </button>
+            <label for="site-primary-button-text">
+              Giris butonu
+              <input id="site-primary-button-text" name="primaryButtonText" type="text" maxlength="80" />
+            </label>
           </div>
 
-          <form id="admin-new-question-form" class="admin-question-form">
-            <h3>Yeni Soru Ekle</h3>
-
-            <label for="new-question-text">
-              Soru metni
-              <input
-                id="new-question-text"
-                name="questionText"
-                type="text"
-                required
-                maxlength="260"
-                placeholder="Soru metnini yaz"
-              />
+          <div class="admin-settings-grid">
+            <label for="site-participant-label">
+              Isim etiketi
+              <input id="site-participant-label" name="participantLabel" type="text" maxlength="100" />
             </label>
 
-            <div class="admin-question-grid">
-              <label for="new-question-type">
-                Soru tipi
-                <select id="new-question-type" name="questionType" required>
-                  <option value="single_choice">Tek secim</option>
-                  <option value="multi_choice">Coklu secim</option>
-                  <option value="open_text">Acik uclu</option>
-                  <option value="rating">Puanlama (1-10)</option>
-                </select>
-              </label>
+            <label for="site-participant-placeholder">
+              Isim placeholder
+              <input id="site-participant-placeholder" name="participantPlaceholder" type="text" maxlength="100" />
+            </label>
+          </div>
 
-              <label for="new-question-order">
-                Sira
-                <input id="new-question-order" name="orderIndex" type="number" min="1" value="1" />
-              </label>
-            </div>
-
-            <label for="new-question-options">
-              Secenekler (her satira bir secenek)
-              <textarea
-                id="new-question-options"
-                name="optionsText"
-                placeholder="Secenek 1&#10;Secenek 2&#10;Secenek 3"
-              ></textarea>
+          <div class="admin-settings-grid">
+            <label for="site-team-label">
+              Takim etiketi
+              <input id="site-team-label" name="teamLabel" type="text" maxlength="100" />
             </label>
 
-            <div class="admin-inline-checks">
-              <label class="admin-check-item">
-                <input id="new-question-active" name="isActive" type="checkbox" checked />
-                Aktif
-              </label>
-              <label class="admin-check-item">
-                <input id="new-question-approved" name="approved" type="checkbox" checked />
-                Onayli
-              </label>
-            </div>
-
-            <button class="primary-btn" type="submit">Soruyu Ekle</button>
-          </form>
-
-          <div id="admin-questions-feedback" class="hidden"></div>
-          <div id="admin-questions-list" class="admin-question-list"></div>
-        </section>
-
-        <section class="admin-tab-panel" data-admin-panel="site">
-          <h2>Ana Sayfa Metinleri</h2>
-          <p class="section-note">
-            Ilk ekranda gorunen basliklari, kutu aciklamalarini ve buton metinlerini buradan degistirebilirsin.
-          </p>
-
-          <form id="admin-site-settings-form" class="admin-question-form admin-settings-form">
-            <h3>Gorunen Metinler</h3>
-
-            <div class="admin-settings-grid">
-              <label for="site-hero-title">
-                Ust baslik
-                <input id="site-hero-title" name="heroTitle" type="text" maxlength="120" />
-              </label>
-
-              <label for="site-hero-description">
-                Ust aciklama
-                <input id="site-hero-description" name="heroDescription" type="text" maxlength="180" />
-              </label>
-            </div>
-
-            <label for="site-landing-headline">
-              Ana baslik
-              <input id="site-landing-headline" name="landingHeadline" type="text" maxlength="180" />
+            <label for="site-team-placeholder">
+              Takim placeholder
+              <input id="site-team-placeholder" name="teamPlaceholder" type="text" maxlength="100" />
             </label>
+          </div>
 
-            <label for="site-info-text">
-              Giris aciklamasi
-              <textarea id="site-info-text" name="infoText"></textarea>
-            </label>
-
-            <div class="admin-settings-grid">
-              <label for="site-entry-form-title">
-                Form basligi
-                <input id="site-entry-form-title" name="entryFormTitle" type="text" maxlength="100" />
-              </label>
-
-              <label for="site-primary-button-text">
-                Basla butonu
-                <input id="site-primary-button-text" name="primaryButtonText" type="text" maxlength="80" />
-              </label>
-            </div>
-
-            <div class="admin-settings-grid">
-              <label for="site-participant-label">
-                Isim etiketi
-                <input id="site-participant-label" name="participantLabel" type="text" maxlength="100" />
-              </label>
-
-              <label for="site-participant-placeholder">
-                Isim placeholder
-                <input id="site-participant-placeholder" name="participantPlaceholder" type="text" maxlength="100" />
-              </label>
-            </div>
-
-            <div class="admin-settings-grid">
-              <label for="site-team-label">
-                Takim etiketi
-                <input id="site-team-label" name="teamLabel" type="text" maxlength="100" />
-              </label>
-
-              <label for="site-team-placeholder">
-                Takim placeholder
-                <input id="site-team-placeholder" name="teamPlaceholder" type="text" maxlength="100" />
-              </label>
-            </div>
-
-            <label for="site-role-prompt">
-              Taraf secim sorusu
-              <input id="site-role-prompt" name="rolePrompt" type="text" maxlength="140" />
-            </label>
-
-            <div class="admin-settings-grid">
-              <label for="site-female-card-title">
-                Kiz kart basligi
-                <input id="site-female-card-title" name="femaleCardTitle" type="text" maxlength="100" />
-              </label>
-
-              <label for="site-female-card-description">
-                Kiz kart aciklamasi
-                <input id="site-female-card-description" name="femaleCardDescription" type="text" maxlength="140" />
-              </label>
-            </div>
-
-            <div class="admin-settings-grid">
-              <label for="site-male-card-title">
-                Erkek kart basligi
-                <input id="site-male-card-title" name="maleCardTitle" type="text" maxlength="100" />
-              </label>
-
-              <label for="site-male-card-description">
-                Erkek kart aciklamasi
-                <input id="site-male-card-description" name="maleCardDescription" type="text" maxlength="140" />
-              </label>
-            </div>
-
+          <div class="admin-settings-grid">
             <label for="site-flow-title">
               Alt bolum basligi
               <input id="site-flow-title" name="flowTitle" type="text" maxlength="120" />
             </label>
 
-            <label for="site-flow-step-one">
-              Alt bolum 1. kutu
-              <input id="site-flow-step-one" name="flowStepOne" type="text" maxlength="180" />
+            <label for="site-submit-button-text">
+              Bitir butonu
+              <input id="site-submit-button-text" name="submitButtonText" type="text" maxlength="80" />
             </label>
-
-            <label for="site-flow-step-two">
-              Alt bolum 2. kutu
-              <input id="site-flow-step-two" name="flowStepTwo" type="text" maxlength="180" />
-            </label>
-
-            <label for="site-flow-step-three">
-              Alt bolum 3. kutu
-              <input id="site-flow-step-three" name="flowStepThree" type="text" maxlength="180" />
-            </label>
-
-            <div class="admin-settings-grid">
-              <label for="site-submit-button-text">
-                Anket bitir butonu
-                <input id="site-submit-button-text" name="submitButtonText" type="text" maxlength="80" />
-              </label>
-
-              <label for="site-completion-message">
-                Tamamlandi mesaji
-                <input id="site-completion-message" name="completionMessage" type="text" maxlength="180" />
-              </label>
-            </div>
-
-            <button id="admin-save-site-settings-btn" class="primary-btn" type="submit">
-              Metinleri Kaydet
-            </button>
-          </form>
-
-          <div id="admin-site-settings-feedback" class="hidden"></div>
-        </section>
-
-        <section class="admin-tab-panel" data-admin-panel="rules">
-          <h2>Kurallari Duzenle</h2>
-          <div id="admin-rules-list" class="admin-rule-stack"></div>
-
-          <div class="admin-actions-row">
-            <button id="admin-add-rule-btn" type="button" class="ghost-btn">Kural Ekle</button>
-            <button id="admin-save-rules-btn" type="button" class="primary-btn">Kurallari Kaydet</button>
           </div>
 
-          <div id="admin-rules-feedback" class="hidden"></div>
-        </section>
+          <label for="site-flow-step-one">
+            Alt bolum 1
+            <input id="site-flow-step-one" name="flowStepOne" type="text" maxlength="180" />
+          </label>
+
+          <label for="site-flow-step-two">
+            Alt bolum 2
+            <input id="site-flow-step-two" name="flowStepTwo" type="text" maxlength="180" />
+          </label>
+
+          <label for="site-flow-step-three">
+            Alt bolum 3
+            <input id="site-flow-step-three" name="flowStepThree" type="text" maxlength="180" />
+          </label>
+
+          <label for="site-completion-message">
+            Tamamlanma mesaji
+            <input id="site-completion-message" name="completionMessage" type="text" maxlength="180" />
+          </label>
+
+          <div class="admin-settings-block">
+            <div class="admin-browser-head">
+              <h3>Kurallar</h3>
+            </div>
+
+            <div id="admin-rules-list" class="admin-rule-stack"></div>
+
+            <div class="admin-actions-row">
+              <button id="admin-add-rule-btn" type="button" class="ghost-btn">Kural Ekle</button>
+            </div>
+          </div>
+
+          <div class="admin-actions-row">
+            <button class="primary-btn" type="submit">Ayarlari Kaydet</button>
+          </div>
+        </form>
+
+        <div id="admin-site-settings-feedback" class="hidden"></div>
       </section>
     </main>
 

@@ -5,26 +5,10 @@
 
   const form = document.querySelector('#entry-form');
   const feedback = document.querySelector('#form-feedback');
-  const genderInput = form?.querySelector('input[name="genderType"]');
-  const genderButtons = Array.from(document.querySelectorAll('[data-gender-option]'));
 
-  if (!form || !genderInput) {
+  if (!form) {
     return;
   }
-
-  function setGender(nextGender) {
-    genderInput.value = nextGender;
-    genderButtons.forEach((button) => {
-      button.classList.toggle('is-active', button.dataset.genderOption === nextGender);
-    });
-  }
-
-  genderButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      setGender(button.dataset.genderOption === 'female' ? 'female' : 'male');
-      shared.hideMessage(feedback);
-    });
-  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -34,11 +18,10 @@
     const payload = {
       participantName: String(formData.get('participantName') || '').trim(),
       teamName: String(formData.get('teamName') || '').trim(),
-      genderType: String(formData.get('genderType') || '').trim(),
     };
 
-    if (!payload.participantName || !payload.teamName || !payload.genderType) {
-      shared.showMessage(feedback, 'Isim, takim ismi ve taraf secimi zorunludur.', 'error');
+    if (!payload.participantName || !payload.teamName) {
+      shared.showMessage(feedback, 'Isim ve takim ismi zorunludur.', 'error');
       return;
     }
 

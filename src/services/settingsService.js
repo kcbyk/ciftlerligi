@@ -4,6 +4,16 @@ const { SETTINGS_COLLECTION } = require('../constants/collections');
 const { normalizeText } = require('../utils/sanitize');
 
 const SETTINGS_DOC_ID = 'main';
+const LEGACY_RULE_REPLACEMENTS = new Map([
+  [
+    'Kizlar sadece kiz anketini, erkekler sadece erkek anketini gorur.',
+    'Sistemde tek bir 30 soruluk anket acilir.',
+  ],
+  [
+    'Kiz ve erkek sorulari birbirinden ayridir.',
+    'Tek bir anket acilir ve 30 soru gelir.',
+  ],
+]);
 
 function nowIso() {
   return new Date().toISOString();
@@ -11,6 +21,30 @@ function nowIso() {
 
 function getSettingsRef() {
   return getFirestore().collection(SETTINGS_COLLECTION).doc(SETTINGS_DOC_ID);
+}
+
+function normalizeLegacySettings(settings = {}) {
+  const normalized = {
+    ...settings,
+  };
+
+  if (normalized.infoText === 'Ankete baslamak icin kendi adini, takim adini ve rolu sec.') {
+    normalized.infoText = 'Ankete baslamak icin kendi adini ve takim adini yaz.';
+  }
+
+  if (normalized.flowStepOne === '1. Ana sayfada iki kutuyu doldur ve tarafini sec.') {
+    normalized.flowStepOne = '1. Ana sayfada ismini ve takim ismini yaz.';
+  }
+
+  if (normalized.flowStepTwo === '2. Sistemde senin tarafina ait 30 soru acilir.') {
+    normalized.flowStepTwo = '2. Sistemde tek bir 30 soruluk anket acilir.';
+  }
+
+  if (Array.isArray(normalized.rules)) {
+    normalized.rules = normalized.rules.map((rule) => LEGACY_RULE_REPLACEMENTS.get(rule) || rule);
+  }
+
+  return normalized;
 }
 
 function sanitizeSettingsPatch(payload = {}) {
@@ -34,7 +68,7 @@ function sanitizeSettingsPatch(payload = {}) {
   }
 
   if (typeof payload.infoText === 'string') {
-    patch.infoText = normalizeText(payload.infoText) || '[BILGILENDIRME_METNI]';
+    patch.infoText = normalizeText(payload.infoText) || 'Ankete baslamak icin kendi adini ve takim adini yaz.';
   }
 
   if (typeof payload.entryFormTitle === 'string') {
@@ -87,13 +121,12 @@ function sanitizeSettingsPatch(payload = {}) {
 
   if (typeof payload.flowStepOne === 'string') {
     patch.flowStepOne =
-      normalizeText(payload.flowStepOne) ||
-      '1. Ana sayfada iki kutuyu doldur ve tarafini sec.';
+      normalizeText(payload.flowStepOne) || '1. Ana sayfada ismini ve takim ismini yaz.';
   }
 
   if (typeof payload.flowStepTwo === 'string') {
     patch.flowStepTwo =
-      normalizeText(payload.flowStepTwo) || '2. Sistemde senin tarafina ait 30 soru acilir.';
+      normalizeText(payload.flowStepTwo) || '2. Sistemde tek bir 30 soruluk anket acilir.';
   }
 
   if (typeof payload.flowStepThree === 'string') {
@@ -177,7 +210,8 @@ async function ensureSettings() {
 }
 
 async function getSettings() {
-  return ensureSettings();
+  const settings = await ensureSettings();
+  return normalizeLegacySettings(settings);
 }
 
 async function updateSettings(payload) {
@@ -191,10 +225,10 @@ async function updateSettings(payload) {
   await ref.set(patch, { merge: true });
 
   const snapshot = await ref.get();
-  return {
+  return normalizeLegacySettings({
     id: snapshot.id,
     ...snapshot.data(),
-  };
+  });
 }
 
 module.exports = {
