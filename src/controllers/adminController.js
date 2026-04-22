@@ -3,6 +3,7 @@ const { getSettings, updateSettings } = require('../services/settingsService');
 const {
   listQuestions,
   createQuestion,
+  getQuestionById,
   updateQuestion,
   deleteQuestion,
   isQuestionUsable,
@@ -23,6 +24,42 @@ const { signAdminToken } = require('../utils/adminToken');
 const { ADMIN_COOKIE_NAME } = require('../middlewares/adminAuth');
 
 const ADMIN_TOKEN_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+
+function getQuestionTextKey(question = {}) {
+  return normalizeText(question.questionText).toLocaleLowerCase('tr-TR');
+}
+
+function getRepresentativeQuestions(questionList = []) {
+  const grouped = new Map();
+
+  questionList.forEach((question) => {
+    const key = getQuestionTextKey(question);
+    const current = grouped.get(key);
+
+    if (!current) {
+      grouped.set(key, question);
+      return;
+    }
+
+    const currentOrder = Number(current.orderIndex || Number.MAX_SAFE_INTEGER);
+    const nextOrder = Number(question.orderIndex || Number.MAX_SAFE_INTEGER);
+
+    if (nextOrder < currentOrder) {
+      grouped.set(key, question);
+    }
+  });
+
+  return Array.from(grouped.values()).sort((left, right) => {
+    const leftOrder = Number(left.orderIndex || Number.MAX_SAFE_INTEGER);
+    const rightOrder = Number(right.orderIndex || Number.MAX_SAFE_INTEGER);
+
+    if (leftOrder === rightOrder) {
+      return String(left.questionText || '').localeCompare(String(right.questionText || ''), 'tr-TR');
+    }
+
+    return leftOrder - rightOrder;
+  });
+}
 
 function resolveIpAddress(req) {
   return req.headers['x-forwarded-for'] || req.ip || '';
@@ -139,7 +176,7 @@ async function patchAdminSettings(req, res) {
 async function getAdminQuestions(req, res) {
   const genderType = ensureGenderType(req.query?.genderType);
 
-  const questions = (await listQuestions({
+  const questions = getRepresentativeQuestions((await listQuestions({
     genderType: genderType || undefined,
     includeInactive: true,
     includeUnapproved: true,
@@ -149,7 +186,7 @@ async function getAdminQuestions(req, res) {
       ...question,
       questionType: 'open_text',
       options: [],
-    }));
+    })));
 
   return res.json({
     success: true,
@@ -162,6 +199,23 @@ async function createAdminQuestion(req, res) {
     includeInactive: true,
     includeUnapproved: true,
   });
+  const normalizedQuestionText = getQuestionTextKey({
+    questionText: req.body?.questionText,
+  });
+
+  if (normalizedQuestionText) {
+    const duplicateQuestion = existingQuestions.find(
+      (question) => getQuestionTextKey(question) === normalizedQuestionText
+    );
+
+    if (duplicateQuestion) {
+      return res.status(409).json({
+        success: false,
+        message: 'Bu soru zaten listede var.',
+      });
+    }
+  }
+
   const maxOrderIndex = existingQuestions.reduce(
     (maxValue, question) => Math.max(maxValue, Number(question.orderIndex || 0)),
     0
@@ -199,14 +253,36 @@ async function patchAdminQuestion(req, res) {
     });
   }
 
-  const updated = await updateQuestion(questionId, {
+  const targetQuestion = await getQuestionById(questionId);
+  if (!targetQuestion) {
+    return res.status(404).json({
+      success: false,
+      message: 'Soru bulunamadi.',
+    });
+  }
+
+  const existingQuestions = await listQuestions({
+    includeInactive: true,
+    includeUnapproved: true,
+  });
+  const targetKey = getQuestionTextKey(targetQuestion);
+  const relatedQuestions = existingQuestions.filter(
+    (question) => getQuestionTextKey(question) === targetKey
+  );
+
+  const payload = {
     questionText: req.body?.questionText,
     orderIndex: req.body?.orderIndex,
     questionType: 'open_text',
     options: [],
     isActive: true,
     approved: true,
-  });
+  };
+
+  const updatedQuestions = await Promise.all(
+    relatedQuestions.map((question) => updateQuestion(question.id, payload))
+  );
+  const updated = getRepresentativeQuestions(updatedQuestions)[0];
 
   await createAdminLog({
     actionType: 'ADMIN_QUESTION_UPDATED',
@@ -230,7 +306,27 @@ async function removeAdminQuestion(req, res) {
     });
   }
 
-  const deleted = await deleteQuestion(questionId);
+  const targetQuestion = await getQuestionById(questionId);
+  if (!targetQuestion) {
+    return res.status(404).json({
+      success: false,
+      message: 'Soru bulunamadi.',
+    });
+  }
+
+  const existingQuestions = await listQuestions({
+    includeInactive: true,
+    includeUnapproved: true,
+  });
+  const targetKey = getQuestionTextKey(targetQuestion);
+  const relatedQuestions = existingQuestions.filter(
+    (question) => getQuestionTextKey(question) === targetKey
+  );
+
+  const deletedQuestions = await Promise.all(
+    relatedQuestions.map((question) => deleteQuestion(question.id))
+  );
+  const deleted = deletedQuestions[0];
 
   await createAdminLog({
     actionType: 'ADMIN_QUESTION_DELETED',
