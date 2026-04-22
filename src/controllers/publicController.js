@@ -5,6 +5,8 @@ const { sendSubmissionNotification } = require('../services/telegramBotService')
 const { signSurveyToken } = require('../utils/surveyToken');
 const { normalizeText } = require('../utils/sanitize');
 
+const QUESTION_TIME_LIMIT_SECONDS = 45;
+
 function validateBasicFormFields(payload = {}) {
   const pairName = normalizeText(payload.teamName || payload.pairName);
   const respondentName = normalizeText(payload.participantName || payload.respondentName);
@@ -132,7 +134,7 @@ async function getSurveyQuestions(req, res) {
   res.json({
     success: true,
     data: {
-      questionTimeLimitSeconds: 10,
+      questionTimeLimitSeconds: QUESTION_TIME_LIMIT_SECONDS,
       questions: safeQuestions,
     },
   });
@@ -151,7 +153,7 @@ async function submitSurvey(req, res) {
   );
 
   const issuedAt = Number(surveySession.issuedAt || 0);
-  const allowedDurationMs = activeQuestions.length * 10 * 1000;
+  const allowedDurationMs = activeQuestions.length * QUESTION_TIME_LIMIT_SECONDS * 1000;
 
   if (issuedAt && allowedDurationMs > 0 && Date.now() - issuedAt > allowedDurationMs) {
     const error = new Error('Suren doldu. Lutfen anketi bastan baslat.');

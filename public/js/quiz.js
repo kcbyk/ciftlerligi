@@ -2,6 +2,7 @@
   const shared = window.ContestShared;
   const settings = await shared.loadSettings();
   shared.applyBranding(settings);
+  const DEFAULT_QUESTION_TIME_LIMIT_SECONDS = 45;
 
   const token = sessionStorage.getItem('surveyToken');
   if (!token) {
@@ -17,7 +18,7 @@
     answers: {},
     index: 0,
     submitting: false,
-    questionTimeLimitSeconds: 10,
+    questionTimeLimitSeconds: DEFAULT_QUESTION_TIME_LIMIT_SECONDS,
     timerIntervalId: null,
     timerStartedAt: 0,
     failed: false,
@@ -248,8 +249,8 @@
       ? questionPayload.data.questions
       : [];
     state.questionTimeLimitSeconds = Math.max(
-      10,
-      Number(questionPayload.data?.questionTimeLimitSeconds || 10)
+      DEFAULT_QUESTION_TIME_LIMIT_SECONDS,
+      Number(questionPayload.data?.questionTimeLimitSeconds || DEFAULT_QUESTION_TIME_LIMIT_SECONDS)
     );
 
     if (!state.questions.length) {
