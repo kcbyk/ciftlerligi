@@ -17,6 +17,21 @@ function questionCollection() {
   return getFirestore().collection(QUESTIONS_COLLECTION);
 }
 
+function isQuestionUsable(question = {}) {
+  const questionText = normalizeText(question.questionText);
+  const questionType = normalizeText(question.questionType).toLowerCase();
+
+  if (!questionText || /^\[[A-Z0-9_]+\]$/.test(questionText) || !ALLOWED_QUESTION_TYPES.has(questionType)) {
+    return false;
+  }
+
+  if (questionType === 'single_choice' || questionType === 'multi_choice') {
+    return Array.isArray(question.options) && question.options.some((option) => normalizeText(option));
+  }
+
+  return true;
+}
+
 function getQuestionSeedKey(question = {}) {
   const genderType = ensureGenderType(question.genderType) || 'shared';
   const questionType = normalizeText(question.questionType).toLowerCase();
@@ -28,7 +43,7 @@ function getUniqueQuestionCount(questions = []) {
   const keys = new Set();
 
   questions
-    .filter((question) => question.isActive && question.approved)
+    .filter((question) => question.isActive && question.approved && isQuestionUsable(question))
     .forEach((question) => {
       keys.add(`${normalizeText(question.questionType).toLowerCase()}::${normalizeText(question.questionText).toLocaleLowerCase('tr-TR')}`);
     });
@@ -47,7 +62,7 @@ async function ensureDefaultQuestions() {
   const defaults = buildDefaultQuestions();
   const existingKeys = new Set(
     existingQuestions
-      .filter((question) => question.isActive && question.approved)
+      .filter((question) => question.isActive && question.approved && isQuestionUsable(question))
       .map((question) => getQuestionSeedKey(question))
   );
   const missingDefaults = defaults.filter((question) => !existingKeys.has(getQuestionSeedKey(question)));
@@ -292,4 +307,5 @@ module.exports = {
   deleteQuestion,
   reorderQuestions,
   getQuestionMapByIds,
+  isQuestionUsable,
 };

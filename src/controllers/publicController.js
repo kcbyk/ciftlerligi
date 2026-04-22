@@ -1,5 +1,5 @@
 const { getSettings } = require('../services/settingsService');
-const { listQuestions } = require('../services/questionService');
+const { listQuestions, isQuestionUsable } = require('../services/questionService');
 const { createSubmission } = require('../services/submissionService');
 const { sendSubmissionNotification } = require('../services/telegramBotService');
 const { signSurveyToken } = require('../utils/surveyToken');
@@ -121,7 +121,7 @@ async function getSurveyQuestions(req, res) {
     includeInactive: false,
     includeUnapproved: false,
   });
-  const uniqueQuestions = getUniqueQuestions(questions);
+  const uniqueQuestions = getUniqueQuestions(questions.filter(isQuestionUsable));
 
   const safeQuestions = uniqueQuestions.map((question) => ({
     id: question.id,
