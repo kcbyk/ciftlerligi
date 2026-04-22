@@ -17,6 +17,10 @@
     answers: {},
     index: 0,
     submitting: false,
+    questionTimeLimitSeconds: 10,
+    timerIntervalId: null,
+    timerStartedAt: 0,
+    failed: false,
   };
 
   const refs = {
@@ -27,12 +31,19 @@
     nextBtn: document.querySelector('#quiz-next-btn'),
     feedback: document.querySelector('#quiz-feedback'),
     personTitle: document.querySelector('#quiz-person-title'),
+    timerText: document.querySelector('#quiz-timer-text'),
+    timerFill: document.querySelector('#quiz-timer-fill'),
   };
 
   if (refs.personTitle && profile) {
     const participantName = profile.participantName || profile.respondentName || 'Katilimci';
     const teamName = profile.teamName || profile.pairName || 'Takim';
     refs.personTitle.textContent = `${participantName} - ${teamName}`;
+  }
+
+  if (refs.backBtn) {
+    refs.backBtn.classList.add('hidden');
+    refs.backBtn.disabled = true;
   }
 
   function getCurrentQuestion() {
@@ -47,120 +58,88 @@
     state.answers[questionId] = value;
   }
 
+  function clearTimer() {
+    if (state.timerIntervalId) {
+      window.clearInterval(state.timerIntervalId);
+      state.timerIntervalId = null;
+    }
+  }
+
+  function redirectToHomeWithFailure() {
+    if (state.failed) {
+      return;
+    }
+
+    state.failed = true;
+    clearTimer();
+    sessionStorage.removeItem('surveyToken');
+    sessionStorage.removeItem('surveyProfile');
+    sessionStorage.setItem('entryError', 'Suren bitti. Anket basarisiz oldu. Lutfen yeniden basla.');
+    window.location.href = '/?timeout=1';
+  }
+
+  function updateTimerUi() {
+    const limitMs = state.questionTimeLimitSeconds * 1000;
+    const elapsedMs = Date.now() - state.timerStartedAt;
+    const remainingMs = Math.max(limitMs - elapsedMs, 0);
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+    const ratio = Math.max(remainingMs / limitMs, 0);
+
+    if (refs.timerText) {
+      refs.timerText.textContent = `${remainingSeconds} sn`;
+    }
+
+    if (refs.timerFill) {
+      refs.timerFill.style.width = `${ratio * 100}%`;
+      refs.timerFill.classList.toggle('is-low', ratio <= 0.3);
+    }
+
+    if (remainingMs <= 0) {
+      redirectToHomeWithFailure();
+    }
+  }
+
+  function startQuestionTimer() {
+    clearTimer();
+    state.timerStartedAt = Date.now();
+    updateTimerUi();
+    state.timerIntervalId = window.setInterval(updateTimerUi, 200);
+  }
+
   function isAnswerEmpty(question, value) {
     if (!question) {
       return true;
     }
 
-    if (question.questionType === 'multi_choice') {
-      return !Array.isArray(value) || value.length === 0;
-    }
-
-    if (question.questionType === 'rating') {
-      return value === null || typeof value === 'undefined' || value === '';
-    }
-
     return !String(value || '').trim();
   }
 
-  function renderSingleChoice(question, currentValue) {
-    const list = document.createElement('div');
-    list.className = 'choice-list';
-
-    (question.options || []).forEach((option, optionIndex) => {
-      const wrapper = document.createElement('label');
-      wrapper.className = 'choice-item';
-
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = `question-${question.id}`;
-      input.value = option;
-      input.checked = String(currentValue || '') === option;
-      input.addEventListener('change', () => setAnswer(question.id, option));
-
-      const text = document.createElement('span');
-      text.textContent = option || `Secenek ${optionIndex + 1}`;
-
-      wrapper.appendChild(input);
-      wrapper.appendChild(text);
-      list.appendChild(wrapper);
-    });
-
-    return list;
-  }
-
-  function renderMultiChoice(question, currentValue) {
-    const selected = Array.isArray(currentValue) ? [...currentValue] : [];
-    const list = document.createElement('div');
-    list.className = 'choice-list';
-
-    (question.options || []).forEach((option) => {
-      const wrapper = document.createElement('label');
-      wrapper.className = 'choice-item';
-
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.value = option;
-      input.checked = selected.includes(option);
-      input.addEventListener('change', () => {
-        const current = Array.isArray(getAnswer(question.id)) ? [...getAnswer(question.id)] : [];
-        if (input.checked) {
-          if (!current.includes(option)) {
-            current.push(option);
-          }
-        } else {
-          const next = current.filter((item) => item !== option);
-          setAnswer(question.id, next);
-          return;
-        }
-
-        setAnswer(question.id, current);
-      });
-
-      const text = document.createElement('span');
-      text.textContent = option;
-
-      wrapper.appendChild(input);
-      wrapper.appendChild(text);
-      list.appendChild(wrapper);
-    });
-
-    return list;
-  }
-
   function renderOpenText(question, currentValue) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'quiz-answer-wrap';
+
+    const note = document.createElement('p');
+    note.className = 'quiz-answer-note';
+    note.textContent = 'Cevap yazin';
+
     const input = document.createElement('textarea');
+    input.className = 'quiz-open-answer';
     input.placeholder = 'Cevabini buraya yaz...';
     input.value = currentValue || '';
+    input.maxLength = 400;
     input.addEventListener('input', () => {
       setAnswer(question.id, input.value);
     });
 
-    return input;
-  }
+    wrapper.appendChild(note);
+    wrapper.appendChild(input);
 
-  function renderRating(question, currentValue) {
-    const list = document.createElement('div');
-    list.className = 'rating-row';
+    window.setTimeout(() => {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }, 0);
 
-    for (let score = 1; score <= 10; score += 1) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'rating-btn';
-      btn.textContent = score;
-      if (Number(currentValue) === score) {
-        btn.classList.add('is-active');
-      }
-
-      btn.addEventListener('click', () => {
-        setAnswer(question.id, score);
-        renderQuestion();
-      });
-
-      list.appendChild(btn);
-    }
-
-    return list;
+    return wrapper;
   }
 
   function renderQuestion() {
@@ -180,17 +159,7 @@
     questionTitle.textContent = question.questionText || 'Soru';
 
     const answerValue = getAnswer(question.id);
-
-    let control;
-    if (question.questionType === 'single_choice') {
-      control = renderSingleChoice(question, answerValue);
-    } else if (question.questionType === 'multi_choice') {
-      control = renderMultiChoice(question, answerValue);
-    } else if (question.questionType === 'rating') {
-      control = renderRating(question, answerValue);
-    } else {
-      control = renderOpenText(question, answerValue);
-    }
+    const control = renderOpenText(question, answerValue);
 
     refs.quizStep.appendChild(indexText);
     refs.quizStep.appendChild(questionTitle);
@@ -199,20 +168,22 @@
     const progress = ((state.index + 1) / state.questions.length) * 100;
     refs.progressFill.style.width = `${Math.max(progress, 2)}%`;
     refs.progressText.textContent = `${state.index + 1}/${state.questions.length}`;
-    refs.backBtn.disabled = state.index === 0;
 
     refs.nextBtn.textContent =
       state.index === state.questions.length - 1
         ? settings.submitButtonText || 'Anketi Bitir'
         : settings.primaryButtonText || 'Devam Et';
+
+    startQuestionTimer();
   }
 
   async function submitSurvey() {
-    if (state.submitting) {
+    if (state.submitting || state.failed) {
       return;
     }
 
     state.submitting = true;
+    clearTimer();
     refs.nextBtn.disabled = true;
 
     const answers = state.questions.map((question) => ({
@@ -232,21 +203,20 @@
 
       sessionStorage.setItem('submissionResult', JSON.stringify(payload.data || {}));
       sessionStorage.removeItem('surveyToken');
+      sessionStorage.removeItem('surveyProfile');
       window.location.href = '/tamamlandi';
     } catch (error) {
+      if (String(error.message || '').toLowerCase().includes('suren doldu')) {
+        redirectToHomeWithFailure();
+        return;
+      }
+
       shared.showMessage(refs.feedback, error.message, 'error');
-    } finally {
       state.submitting = false;
       refs.nextBtn.disabled = false;
+      startQuestionTimer();
     }
   }
-
-  refs.backBtn.addEventListener('click', () => {
-    if (state.index > 0) {
-      state.index -= 1;
-      renderQuestion();
-    }
-  });
 
   refs.nextBtn.addEventListener('click', async () => {
     const question = getCurrentQuestion();
@@ -277,6 +247,10 @@
     state.questions = Array.isArray(questionPayload.data?.questions)
       ? questionPayload.data.questions
       : [];
+    state.questionTimeLimitSeconds = Math.max(
+      10,
+      Number(questionPayload.data?.questionTimeLimitSeconds || 10)
+    );
 
     if (!state.questions.length) {
       shared.showMessage(
@@ -293,4 +267,6 @@
     shared.showMessage(refs.feedback, error.message, 'error');
     refs.nextBtn.disabled = true;
   }
+
+  window.addEventListener('beforeunload', clearTimer);
 })();

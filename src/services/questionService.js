@@ -52,37 +52,7 @@ function getUniqueQuestionCount(questions = []) {
 }
 
 async function ensureDefaultQuestions() {
-  const snapshot = await questionCollection().get();
-  const existingQuestions = snapshot.docs.map(shapeQuestion);
-
-  if (getUniqueQuestionCount(existingQuestions) >= 30) {
-    return;
-  }
-
-  const defaults = buildDefaultQuestions();
-  const existingKeys = new Set(
-    existingQuestions
-      .filter((question) => question.isActive && question.approved && isQuestionUsable(question))
-      .map((question) => getQuestionSeedKey(question))
-  );
-  const missingDefaults = defaults.filter((question) => !existingKeys.has(getQuestionSeedKey(question)));
-
-  if (!missingDefaults.length) {
-    return;
-  }
-
-  const batch = getFirestore().batch();
-
-  missingDefaults.forEach((question) => {
-    const ref = questionCollection().doc();
-    batch.set(ref, {
-      ...question,
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    });
-  });
-
-  await batch.commit();
+  return;
 }
 
 function shapeQuestion(document) {

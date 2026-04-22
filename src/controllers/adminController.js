@@ -5,6 +5,7 @@ const {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  isQuestionUsable,
 } = require('../services/questionService');
 const {
   getPairSummaries,
@@ -138,11 +139,17 @@ async function patchAdminSettings(req, res) {
 async function getAdminQuestions(req, res) {
   const genderType = ensureGenderType(req.query?.genderType);
 
-  const questions = await listQuestions({
+  const questions = (await listQuestions({
     genderType: genderType || undefined,
     includeInactive: true,
     includeUnapproved: true,
-  });
+  }))
+    .filter(isQuestionUsable)
+    .map((question) => ({
+      ...question,
+      questionType: 'open_text',
+      options: [],
+    }));
 
   return res.json({
     success: true,
@@ -151,7 +158,24 @@ async function getAdminQuestions(req, res) {
 }
 
 async function createAdminQuestion(req, res) {
-  const created = await createQuestion(req.body || {});
+  const existingQuestions = await listQuestions({
+    includeInactive: true,
+    includeUnapproved: true,
+  });
+  const maxOrderIndex = existingQuestions.reduce(
+    (maxValue, question) => Math.max(maxValue, Number(question.orderIndex || 0)),
+    0
+  );
+
+  const created = await createQuestion({
+    questionText: req.body?.questionText,
+    orderIndex: Number(req.body?.orderIndex || 0) || maxOrderIndex + 1,
+    questionType: 'open_text',
+    options: [],
+    genderType: 'male',
+    isActive: true,
+    approved: true,
+  });
 
   await createAdminLog({
     actionType: 'ADMIN_QUESTION_CREATED',
@@ -175,7 +199,14 @@ async function patchAdminQuestion(req, res) {
     });
   }
 
-  const updated = await updateQuestion(questionId, req.body || {});
+  const updated = await updateQuestion(questionId, {
+    questionText: req.body?.questionText,
+    orderIndex: req.body?.orderIndex,
+    questionType: 'open_text',
+    options: [],
+    isActive: true,
+    approved: true,
+  });
 
   await createAdminLog({
     actionType: 'ADMIN_QUESTION_UPDATED',

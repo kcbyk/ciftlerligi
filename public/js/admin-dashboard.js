@@ -5,6 +5,7 @@
 
   const state = {
     settings: null,
+    questions: [],
     teamsLoaded: false,
     teams: [],
     selectedTeamKey: '',
@@ -15,6 +16,10 @@
 
   const refs = {
     logoutButton: document.querySelector('#admin-logout-btn'),
+    questionCount: document.querySelector('#admin-question-count'),
+    questionCreateForm: document.querySelector('#admin-question-create-form'),
+    questionsFeedback: document.querySelector('#admin-questions-feedback'),
+    questionsList: document.querySelector('#admin-questions-list'),
     refreshButton: document.querySelector('#admin-refresh-btn'),
     teamsCount: document.querySelector('#admin-teams-count'),
     teamsList: document.querySelector('#admin-teams-list'),
@@ -96,6 +101,27 @@
       .slice(0, 15);
   }
 
+  function getNextQuestionOrder() {
+    return (
+      state.questions.reduce(
+        (maxValue, question) => Math.max(maxValue, Number(question.orderIndex || 0)),
+        0
+      ) + 1
+    );
+  }
+
+  function resetQuestionCreateForm() {
+    if (!refs.questionCreateForm) {
+      return;
+    }
+
+    refs.questionCreateForm.reset();
+    const orderInput = refs.questionCreateForm.elements.namedItem('orderIndex');
+    if (orderInput) {
+      orderInput.value = String(getNextQuestionOrder());
+    }
+  }
+
   function renderSiteSettings(settingsPayload = {}) {
     if (!refs.siteSettingsForm) {
       return;
@@ -137,6 +163,158 @@
 
     state.settings = payload.data || {};
     renderSiteSettings(state.settings);
+  }
+
+  function renderQuestions() {
+    if (!refs.questionsList || !refs.questionCount) {
+      return;
+    }
+
+    refs.questionCount.textContent = String(state.questions.length);
+    refs.questionsList.innerHTML = '';
+
+    if (!state.questions.length) {
+      const empty = document.createElement('div');
+      empty.className = 'info-box';
+      empty.textContent = 'Henuz soru yok. Yukaridan ilk sorunu ekleyebilirsin.';
+      refs.questionsList.appendChild(empty);
+      resetQuestionCreateForm();
+      return;
+    }
+
+    state.questions.forEach((question, index) => {
+      const card = document.createElement('article');
+      card.className = 'admin-question-card';
+
+      const head = document.createElement('div');
+      head.className = 'admin-browser-head';
+
+      const title = document.createElement('h3');
+      title.textContent = `Soru ${index + 1}`;
+
+      const orderBadge = document.createElement('span');
+      orderBadge.className = 'admin-counter';
+      orderBadge.textContent = String(question.orderIndex || index + 1);
+
+      head.appendChild(title);
+      head.appendChild(orderBadge);
+
+      const textLabel = document.createElement('label');
+      textLabel.textContent = 'Soru basligi';
+
+      const textInput = document.createElement('input');
+      textInput.type = 'text';
+      textInput.maxLength = 260;
+      textInput.value = question.questionText || '';
+      textLabel.appendChild(textInput);
+
+      const orderLabel = document.createElement('label');
+      orderLabel.textContent = 'Sira';
+
+      const orderInput = document.createElement('input');
+      orderInput.type = 'number';
+      orderInput.min = '1';
+      orderInput.value = String(question.orderIndex || index + 1);
+      orderLabel.appendChild(orderInput);
+
+      const localFeedback = document.createElement('div');
+      localFeedback.className = 'hidden';
+
+      const actions = document.createElement('div');
+      actions.className = 'admin-actions-row';
+
+      const saveButton = document.createElement('button');
+      saveButton.type = 'button';
+      saveButton.className = 'primary-btn';
+      saveButton.textContent = 'Kaydet';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'ghost-btn';
+      deleteButton.textContent = 'Sil';
+
+      saveButton.addEventListener('click', async () => {
+        shared.hideMessage(localFeedback);
+
+        const payload = {
+          questionText: String(textInput.value || '').trim(),
+          orderIndex: Math.max(1, Number(orderInput.value || index + 1)),
+        };
+
+        if (!payload.questionText) {
+          shared.showMessage(localFeedback, 'Soru basligi bos olamaz.', 'error');
+          return;
+        }
+
+        saveButton.disabled = true;
+        deleteButton.disabled = true;
+
+        try {
+          await shared.apiFetch(`/api/admin/questions/${encodeURIComponent(question.id)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+          });
+
+          await loadQuestions();
+          shared.showMessage(refs.questionsFeedback, 'Soru kaydedildi.', 'success');
+        } catch (error) {
+          if (!handleAuthError(error)) {
+            shared.showMessage(localFeedback, error.message, 'error');
+          }
+        } finally {
+          saveButton.disabled = false;
+          deleteButton.disabled = false;
+        }
+      });
+
+      deleteButton.addEventListener('click', async () => {
+        shared.hideMessage(localFeedback);
+
+        if (!window.confirm('Bu soruyu silmek istiyor musun?')) {
+          return;
+        }
+
+        saveButton.disabled = true;
+        deleteButton.disabled = true;
+
+        try {
+          await shared.apiFetch(`/api/admin/questions/${encodeURIComponent(question.id)}`, {
+            method: 'DELETE',
+          });
+
+          await loadQuestions();
+          shared.showMessage(refs.questionsFeedback, 'Soru silindi.', 'success');
+        } catch (error) {
+          if (!handleAuthError(error)) {
+            shared.showMessage(localFeedback, error.message, 'error');
+          }
+        } finally {
+          saveButton.disabled = false;
+          deleteButton.disabled = false;
+        }
+      });
+
+      actions.appendChild(saveButton);
+      actions.appendChild(deleteButton);
+
+      card.appendChild(head);
+      card.appendChild(textLabel);
+      card.appendChild(orderLabel);
+      card.appendChild(actions);
+      card.appendChild(localFeedback);
+      refs.questionsList.appendChild(card);
+    });
+
+    resetQuestionCreateForm();
+  }
+
+  async function loadQuestions() {
+    const payload = await shared.apiFetch('/api/admin/questions', {
+      method: 'GET',
+    });
+
+    state.questions = Array.isArray(payload.data) ? payload.data : [];
+    renderQuestions();
   }
 
   function renderTeams() {
@@ -471,6 +649,45 @@
     await loadTeams({ preserveSelection: true, preserveSubmission: true });
   });
 
+  refs.questionCreateForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    shared.hideMessage(refs.questionsFeedback);
+
+    const formData = new FormData(refs.questionCreateForm);
+    const payload = {
+      questionText: String(formData.get('questionText') || '').trim(),
+      orderIndex: Math.max(1, Number(formData.get('orderIndex') || getNextQuestionOrder())),
+    };
+
+    if (!payload.questionText) {
+      shared.showMessage(refs.questionsFeedback, 'Soru basligi bos olamaz.', 'error');
+      return;
+    }
+
+    const submitButton = refs.questionCreateForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
+    try {
+      await shared.apiFetch('/api/admin/questions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      await loadQuestions();
+      shared.showMessage(refs.questionsFeedback, 'Yeni soru eklendi.', 'success');
+    } catch (error) {
+      if (!handleAuthError(error)) {
+        shared.showMessage(refs.questionsFeedback, error.message, 'error');
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
+    }
+  });
+
   refs.addRuleButton?.addEventListener('click', () => {
     refs.rulesList?.appendChild(createRuleInput(''));
   });
@@ -534,7 +751,7 @@
     }
 
     try {
-      await Promise.all([loadAdminSettings(), loadTeams()]);
+      await Promise.all([loadAdminSettings(), loadQuestions(), loadTeams()]);
     } catch (error) {
       if (!handleAuthError(error)) {
         shared.showMessage(

@@ -11,25 +11,9 @@ function submissionsCollection() {
   return getFirestore().collection(SUBMISSIONS_COLLECTION);
 }
 
-function sanitizeAnswerValue(questionType, value) {
-  if (questionType === 'multi_choice') {
-    if (!Array.isArray(value)) {
-      return [];
-    }
-
-    return value
-      .map((item) => normalizeText(item))
-      .filter(Boolean)
-      .slice(0, 12);
-  }
-
-  if (questionType === 'rating') {
-    const score = Number(value);
-    if (!Number.isFinite(score)) {
-      return null;
-    }
-
-    return Math.min(Math.max(Math.round(score), 1), 10);
+function sanitizeAnswerValue(_questionType, value) {
+  if (Array.isArray(value)) {
+    return normalizeText(value.join(', '));
   }
 
   return normalizeText(value);
@@ -114,7 +98,7 @@ async function createSubmission({
       return {
         questionId: answer.questionId,
         questionText: question.questionText,
-        questionType: question.questionType,
+        questionType: 'open_text',
         answer: sanitizedValue,
       };
     })

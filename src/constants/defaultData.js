@@ -196,8 +196,8 @@ function buildQuestionSet(genderType) {
   return BASE_QUESTION_SET.map((question, index) => ({
     genderType,
     questionText: question.questionText,
-    questionType: question.questionType,
-    options: question.options,
+    questionType: 'open_text',
+    options: [],
     isActive: true,
     orderIndex: index + 1,
     approved: true,

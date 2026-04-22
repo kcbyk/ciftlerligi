@@ -32,6 +32,47 @@
       <section class="glass-card form-card admin-simple-section">
         <div class="admin-section-head">
           <div>
+            <h2>Soru Yonetimi</h2>
+            <p class="section-note">
+              Soru basligini yazip kaydet. Sorular ankette bu sirayla acilir ve sadece yazi cevabi alir.
+            </p>
+          </div>
+
+          <span id="admin-question-count" class="admin-counter">0</span>
+        </div>
+
+        <form id="admin-question-create-form" class="admin-question-form" novalidate>
+          <label for="admin-question-text">
+            Soru basligi
+            <input
+              id="admin-question-text"
+              name="questionText"
+              type="text"
+              maxlength="260"
+              placeholder="Soruyu buraya yaz"
+              required
+            />
+          </label>
+
+          <div class="admin-question-grid">
+            <label for="admin-question-order">
+              Sira
+              <input id="admin-question-order" name="orderIndex" type="number" min="1" value="1" />
+            </label>
+          </div>
+
+          <div class="admin-actions-row">
+            <button class="primary-btn" type="submit">Soruyu Kaydet</button>
+          </div>
+        </form>
+
+        <div id="admin-questions-feedback" class="hidden"></div>
+        <div id="admin-questions-list" class="admin-question-list"></div>
+      </section>
+
+      <section class="glass-card form-card admin-simple-section">
+        <div class="admin-section-head">
+          <div>
             <h2>Kayitlar</h2>
             <p class="section-note">
               Soldan takim sec, ortadan kisi sec, sagdan cevaplari gor. Gerekirse kisiyi sil.

@@ -79,9 +79,7 @@ async function createSurveySession(req, res) {
 }
 
 function getQuestionKey(question = {}) {
-  const questionText = normalizeText(question.questionText).toLocaleLowerCase('tr-TR');
-  const questionType = normalizeText(question.questionType).toLowerCase();
-  return `${questionType}::${questionText}`;
+  return normalizeText(question.questionText).toLocaleLowerCase('tr-TR');
 }
 
 function getUniqueQuestions(questionList = []) {
@@ -126,14 +124,15 @@ async function getSurveyQuestions(req, res) {
   const safeQuestions = uniqueQuestions.map((question) => ({
     id: question.id,
     questionText: question.questionText,
-    questionType: question.questionType,
-    options: question.options,
+    questionType: 'open_text',
+    options: [],
     orderIndex: question.orderIndex,
   }));
 
   res.json({
     success: true,
     data: {
+      questionTimeLimitSeconds: 10,
       questions: safeQuestions,
     },
   });
@@ -142,6 +141,23 @@ async function getSurveyQuestions(req, res) {
 async function submitSurvey(req, res) {
   const surveySession = req.surveySession;
   const answers = parseAnswers(req.body.answers);
+  const activeQuestions = getUniqueQuestions(
+    (
+      await listQuestions({
+        includeInactive: false,
+        includeUnapproved: false,
+      })
+    ).filter(isQuestionUsable)
+  );
+
+  const issuedAt = Number(surveySession.issuedAt || 0);
+  const allowedDurationMs = activeQuestions.length * 10 * 1000;
+
+  if (issuedAt && allowedDurationMs > 0 && Date.now() - issuedAt > allowedDurationMs) {
+    const error = new Error('Suren doldu. Lutfen anketi bastan baslat.');
+    error.statusCode = 408;
+    throw error;
+  }
 
   const submission = await createSubmission({
     pairName: surveySession.pairName,
