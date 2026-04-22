@@ -28,8 +28,15 @@ function normalizeLegacySettings(settings = {}) {
     ...settings,
   };
 
-  if (normalized.infoText === 'Ankete baslamak icin kendi adini, takim adini ve rolu sec.') {
+  if (
+    normalized.infoText === 'Ankete baslamak icin kendi adini, takim adini ve rolu sec.' ||
+    normalized.infoText === '[BILGILENDIRME_METNI]'
+  ) {
     normalized.infoText = 'Ankete baslamak icin kendi adini ve takim adini yaz.';
+  }
+
+  if (normalized.completionMessage === '[BASARI_MESAJI]') {
+    normalized.completionMessage = 'Anketin kaydedildi. Admin panelinden cevaplarin gorulebilir.';
   }
 
   if (normalized.flowStepOne === '1. Ana sayfada iki kutuyu doldur ve tarafini sec.') {

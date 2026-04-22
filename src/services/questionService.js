@@ -17,16 +17,48 @@ function questionCollection() {
   return getFirestore().collection(QUESTIONS_COLLECTION);
 }
 
+function getQuestionSeedKey(question = {}) {
+  const genderType = ensureGenderType(question.genderType) || 'shared';
+  const questionType = normalizeText(question.questionType).toLowerCase();
+  const questionText = normalizeText(question.questionText).toLocaleLowerCase('tr-TR');
+  return `${genderType}::${questionType}::${questionText}`;
+}
+
+function getUniqueQuestionCount(questions = []) {
+  const keys = new Set();
+
+  questions
+    .filter((question) => question.isActive && question.approved)
+    .forEach((question) => {
+      keys.add(`${normalizeText(question.questionType).toLowerCase()}::${normalizeText(question.questionText).toLocaleLowerCase('tr-TR')}`);
+    });
+
+  return keys.size;
+}
+
 async function ensureDefaultQuestions() {
-  const snapshot = await questionCollection().limit(1).get();
-  if (!snapshot.empty) {
+  const snapshot = await questionCollection().get();
+  const existingQuestions = snapshot.docs.map(shapeQuestion);
+
+  if (getUniqueQuestionCount(existingQuestions) >= 30) {
     return;
   }
 
   const defaults = buildDefaultQuestions();
+  const existingKeys = new Set(
+    existingQuestions
+      .filter((question) => question.isActive && question.approved)
+      .map((question) => getQuestionSeedKey(question))
+  );
+  const missingDefaults = defaults.filter((question) => !existingKeys.has(getQuestionSeedKey(question)));
+
+  if (!missingDefaults.length) {
+    return;
+  }
+
   const batch = getFirestore().batch();
 
-  defaults.forEach((question) => {
+  missingDefaults.forEach((question) => {
     const ref = questionCollection().doc();
     batch.set(ref, {
       ...question,
