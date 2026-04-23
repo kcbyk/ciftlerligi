@@ -5,8 +5,6 @@ const { sendSubmissionNotification } = require('../services/telegramBotService')
 const { signSurveyToken } = require('../utils/surveyToken');
 const { normalizeText } = require('../utils/sanitize');
 
-const QUESTION_TIME_LIMIT_SECONDS = 45;
-
 function validateBasicFormFields(payload = {}) {
   const pairName = normalizeText(payload.teamName || payload.pairName);
   const respondentName = normalizeText(payload.participantName || payload.respondentName);
@@ -134,7 +132,6 @@ async function getSurveyQuestions(req, res) {
   res.json({
     success: true,
     data: {
-      questionTimeLimitSeconds: QUESTION_TIME_LIMIT_SECONDS,
       questions: safeQuestions,
     },
   });
@@ -143,23 +140,6 @@ async function getSurveyQuestions(req, res) {
 async function submitSurvey(req, res) {
   const surveySession = req.surveySession;
   const answers = parseAnswers(req.body.answers);
-  const activeQuestions = getUniqueQuestions(
-    (
-      await listQuestions({
-        includeInactive: false,
-        includeUnapproved: false,
-      })
-    ).filter(isQuestionUsable)
-  );
-
-  const issuedAt = Number(surveySession.issuedAt || 0);
-  const allowedDurationMs = activeQuestions.length * QUESTION_TIME_LIMIT_SECONDS * 1000;
-
-  if (issuedAt && allowedDurationMs > 0 && Date.now() - issuedAt > allowedDurationMs) {
-    const error = new Error('Suren doldu. Lutfen anketi bastan baslat.');
-    error.statusCode = 408;
-    throw error;
-  }
 
   const submission = await createSubmission({
     pairName: surveySession.pairName,

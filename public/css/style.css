@@ -399,22 +399,6 @@ textarea:focus {
   margin-top: 0;
 }
 
-.quiz-timer {
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 221, 235, 0.28);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.quiz-timer-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-
 .progress-track {
   width: 100%;
   height: 10px;
@@ -429,26 +413,6 @@ textarea:focus {
   border-radius: inherit;
   background: linear-gradient(90deg, #ffc2d8, #ff4f90);
   transition: width 0.34s ease;
-}
-
-.timer-track {
-  width: 100%;
-  height: 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  overflow: hidden;
-}
-
-.timer-fill {
-  height: 100%;
-  width: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #7ef0bd, #ffcf6a);
-  transition: width 0.18s linear, background 0.18s linear;
-}
-
-.timer-fill.is-low {
-  background: linear-gradient(90deg, #ffcf6a, #ff5a83);
 }
 
 .quiz-step {

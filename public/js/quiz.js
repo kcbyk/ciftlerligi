@@ -2,7 +2,6 @@
   const shared = window.ContestShared;
   const settings = await shared.loadSettings();
   shared.applyBranding(settings);
-  const DEFAULT_QUESTION_TIME_LIMIT_SECONDS = 45;
 
   const token = sessionStorage.getItem('surveyToken');
   if (!token) {
@@ -18,10 +17,6 @@
     answers: {},
     index: 0,
     submitting: false,
-    questionTimeLimitSeconds: DEFAULT_QUESTION_TIME_LIMIT_SECONDS,
-    timerIntervalId: null,
-    timerStartedAt: 0,
-    failed: false,
   };
 
   const refs = {
@@ -32,8 +27,6 @@
     nextBtn: document.querySelector('#quiz-next-btn'),
     feedback: document.querySelector('#quiz-feedback'),
     personTitle: document.querySelector('#quiz-person-title'),
-    timerText: document.querySelector('#quiz-timer-text'),
-    timerFill: document.querySelector('#quiz-timer-fill'),
   };
 
   if (refs.personTitle && profile) {
@@ -57,54 +50,6 @@
 
   function setAnswer(questionId, value) {
     state.answers[questionId] = value;
-  }
-
-  function clearTimer() {
-    if (state.timerIntervalId) {
-      window.clearInterval(state.timerIntervalId);
-      state.timerIntervalId = null;
-    }
-  }
-
-  function redirectToHomeWithFailure() {
-    if (state.failed) {
-      return;
-    }
-
-    state.failed = true;
-    clearTimer();
-    sessionStorage.removeItem('surveyToken');
-    sessionStorage.removeItem('surveyProfile');
-    sessionStorage.setItem('entryError', 'Suren bitti. Anket basarisiz oldu. Lutfen yeniden basla.');
-    window.location.href = '/?timeout=1';
-  }
-
-  function updateTimerUi() {
-    const limitMs = state.questionTimeLimitSeconds * 1000;
-    const elapsedMs = Date.now() - state.timerStartedAt;
-    const remainingMs = Math.max(limitMs - elapsedMs, 0);
-    const remainingSeconds = Math.ceil(remainingMs / 1000);
-    const ratio = Math.max(remainingMs / limitMs, 0);
-
-    if (refs.timerText) {
-      refs.timerText.textContent = `${remainingSeconds} sn`;
-    }
-
-    if (refs.timerFill) {
-      refs.timerFill.style.width = `${ratio * 100}%`;
-      refs.timerFill.classList.toggle('is-low', ratio <= 0.3);
-    }
-
-    if (remainingMs <= 0) {
-      redirectToHomeWithFailure();
-    }
-  }
-
-  function startQuestionTimer() {
-    clearTimer();
-    state.timerStartedAt = Date.now();
-    updateTimerUi();
-    state.timerIntervalId = window.setInterval(updateTimerUi, 200);
   }
 
   function isAnswerEmpty(question, value) {
@@ -174,17 +119,14 @@
       state.index === state.questions.length - 1
         ? settings.submitButtonText || 'Anketi Bitir'
         : settings.primaryButtonText || 'Devam Et';
-
-    startQuestionTimer();
   }
 
   async function submitSurvey() {
-    if (state.submitting || state.failed) {
+    if (state.submitting) {
       return;
     }
 
     state.submitting = true;
-    clearTimer();
     refs.nextBtn.disabled = true;
 
     const answers = state.questions.map((question) => ({
@@ -207,15 +149,9 @@
       sessionStorage.removeItem('surveyProfile');
       window.location.href = '/tamamlandi';
     } catch (error) {
-      if (String(error.message || '').toLowerCase().includes('suren doldu')) {
-        redirectToHomeWithFailure();
-        return;
-      }
-
       shared.showMessage(refs.feedback, error.message, 'error');
       state.submitting = false;
       refs.nextBtn.disabled = false;
-      startQuestionTimer();
     }
   }
 
@@ -248,10 +184,6 @@
     state.questions = Array.isArray(questionPayload.data?.questions)
       ? questionPayload.data.questions
       : [];
-    state.questionTimeLimitSeconds = Math.max(
-      DEFAULT_QUESTION_TIME_LIMIT_SECONDS,
-      Number(questionPayload.data?.questionTimeLimitSeconds || DEFAULT_QUESTION_TIME_LIMIT_SECONDS)
-    );
 
     if (!state.questions.length) {
       shared.showMessage(
@@ -268,6 +200,4 @@
     shared.showMessage(refs.feedback, error.message, 'error');
     refs.nextBtn.disabled = true;
   }
-
-  window.addEventListener('beforeunload', clearTimer);
 })();
